@@ -23,6 +23,23 @@ from schema.output_schema import (
 
 _MONEY_EPS = 0.011  # sai số cho phép của phép làm tròn 2 chữ số
 
+# Từ khoá nhận diện ý định trong lời khiếu nại. Kiểm theo thứ tự từ cụ thể đến
+# chung: "nhiều dòng thanh toán" cũng chứa chữ "thanh toán" của nhóm PAID_INCOMPLETE.
+_INTENT_KEYWORDS = [
+    ("SPLIT", ("thu trùng", "nhiều dòng thanh toán", "đối soát")),
+    ("LATE", ("trễ", "chậm", "muộn")),
+    ("PAID_INCOMPLETE", ("không được hoàn tất", "chưa hoàn tất", "đã thanh toán")),
+]
+
+
+def detect_intent(message: str) -> str | None:
+    """Đoán nhóm vấn đề khách hàng đang phản ánh. None nếu không nhận ra."""
+    lowered = (message or "").lower()
+    for family, keywords in _INTENT_KEYWORDS:
+        if any(keyword in lowered for keyword in keywords):
+            return family
+    return None
+
 
 class VerifierAgent(BaseAgent):
     name = "verifier_agent"
@@ -36,16 +53,19 @@ class VerifierAgent(BaseAgent):
         errors += self._check_financials(draft, order_id)
         errors += self._check_limits(draft)
         errors += self._check_consistency(draft)
+        warnings = self._check_claim_intent(case_file, draft)
 
-        verification = Verification(passed=not errors, errors=errors, attempt=attempt)
+        verification = Verification(
+            passed=not errors, errors=errors, warnings=warnings, attempt=attempt
+        )
 
         reply = self.ask(
             prompts.VERIFIER_SYSTEM,
             prompts.verifier_user(
                 case_file.case_id,
-                {"passed": verification.passed, "errors": errors[:5]},
+                {"passed": verification.passed, "errors": errors[:5], "warnings": warnings[:3]},
             ),
-            max_tokens=150,
+            max_tokens=64,
         )
         if reply.get("note"):
             verification.notes = str(reply["note"])[:300]
@@ -54,11 +74,35 @@ class VerifierAgent(BaseAgent):
             case_file.case_id,
             "coordinator",
             "verification",
-            {"passed": verification.passed, "errors": errors, "attempt": attempt},
+            {
+                "passed": verification.passed,
+                "errors": errors,
+                "warnings": warnings,
+                "attempt": attempt,
+            },
         )
         return verification
 
     # ------------------------------------------------------------- các phép check
+
+    @staticmethod
+    def _check_claim_intent(case_file: CaseFile, draft: dict[str, Any]) -> list[str]:
+        """Đối chiếu nhóm kết luận với nhóm vấn đề khách hàng phản ánh.
+
+        Đây là WARNING chứ không phải error: dữ liệu CSV luôn thắng lời khiếu
+        nại (README mục 1). Ví dụ hợp lệ và phổ biến: khách kêu giao trễ nhưng
+        dữ liệu cho thấy giao đúng hạn → unsupported_late_claim, vẫn cùng nhóm
+        LATE nên không có cảnh báo. Cảnh báo chỉ nổ khi lệch hẳn NHÓM, dấu hiệu
+        của lỗi hệ thống (vd ai đó đảo thứ tự bảng rule).
+        """
+        intent = detect_intent(case_file.customer_message)
+        if intent is None:
+            return []
+        issue = draft.get("assessment", {}).get("primary_issue")
+        family = policy_table.ISSUE_FAMILY.get(issue)
+        if family and family != intent:
+            return [f"kết luận nhóm {family} nhưng khiếu nại thuộc nhóm {intent}"]
+        return []
 
     def _check_evidence(self, draft: dict[str, Any]) -> list[str]:
         errors = []

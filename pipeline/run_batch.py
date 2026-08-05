@@ -37,11 +37,14 @@ def run_batch(
     store = DataStore(root / "data")
     llm = LLMClient(project_root=root, enabled=use_llm)
     if not llm.enabled:
-        print("! LLM degraded (thiếu GROQ_API_KEY hoặc --no-llm): agent chạy deterministic-only.")
+        print("! LLM degraded (thiếu OPENAI_API_KEY hoặc --no-llm): agent chạy deterministic-only.")
 
     # Chỉ truncate trace khi chạy full batch — chạy 1 case là để debug, không
     # nên xoá trace của lượt chạy 50 case trước đó.
-    trace = TraceWriter(root / "trace.jsonl", truncate=only_case is None)
+    trace = TraceWriter(
+        [root / "trace.jsonl", root / "logging" / "trace.jsonl"],
+        truncate=only_case is None,
+    )
     coordinator = Coordinator(store, llm, trace)
 
     issue_counter: Counter[str] = Counter()
@@ -106,6 +109,7 @@ def _write_metadata(root: Path, llm: LLMClient, case_count: int, elapsed: float)
         ],
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
-    (root / "metadata.json").write_text(
-        json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    payload = json.dumps(metadata, ensure_ascii=False, indent=2) + "\n"
+    for path in (root / "metadata.json", root / "logging" / "metadata.json"):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(payload, encoding="utf-8")

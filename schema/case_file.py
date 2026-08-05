@@ -65,17 +65,23 @@ class PolicyDecision:
     recommended_refund_brl: float
     resolution_actions: list[str]
     responsible_parties: list[dict[str, str]]
-    secondary_causes: list[str] = field(default_factory=list)
     confidence: float = 0.5
+    llm_flagged: bool = False
     notes: str = ""
 
 
 @dataclass
 class Verification:
-    """Kết quả Verifier Agent."""
+    """Kết quả Verifier Agent.
+
+    errors = lỗi cứng, phải sửa trước khi ghi file.
+    warnings = tín hiệu đáng ngờ (vd kết luận lệch với ý định khiếu nại) — chỉ
+    hạ confidence, KHÔNG chặn output, vì dữ liệu luôn thắng lời khiếu nại.
+    """
 
     passed: bool = False
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     attempt: int = 1
     notes: str = ""
 

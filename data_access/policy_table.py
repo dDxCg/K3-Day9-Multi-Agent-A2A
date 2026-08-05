@@ -24,6 +24,18 @@ ROOT_CAUSE_CODES = {
 
 RECONCILE_TOLERANCE_BRL = 0.10
 
+# Nhóm nghiệp vụ của từng primary_issue. Dùng để đối chiếu chéo với ý định
+# trong lời khiếu nại — CHỈ như tín hiệu cảnh báo, không bao giờ override
+# kết luận từ dữ liệu (README: ưu tiên dữ liệu kiểm chứng hơn lời khiếu nại).
+ISSUE_FAMILY = {
+    "late_delivery_seller": "LATE",
+    "late_delivery_logistics": "LATE",
+    "unsupported_late_claim": "LATE",
+    "canceled_order_paid": "PAID_INCOMPLETE",
+    "unavailable_order_paid": "PAID_INCOMPLETE",
+    "valid_split_payment": "SPLIT",
+}
+
 
 @dataclass(frozen=True)
 class PolicyRule:

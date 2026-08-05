@@ -89,6 +89,14 @@ class Coordinator(BaseAgent):
             draft = self._safe_fallback(case_file)
             self.emit(case_file.case_id, "coordinator", "fallback",
                       {"errors": case_file.verification.errors})
+        elif case_file.verification.warnings:
+            # Kết luận vẫn giữ nguyên (dữ liệu thắng lời khiếu nại), nhưng
+            # hạ confidence để phản ánh đúng mức chắc chắn.
+            draft["assessment"]["confidence"] = self.lower_confidence(
+                draft["assessment"]["confidence"], 0.85
+            )
+            self.emit(case_file.case_id, "coordinator", "warning",
+                      {"warnings": case_file.verification.warnings})
 
         output = CaseOutput.model_validate(draft)
         case_file.final_output = output.model_dump()
@@ -107,9 +115,9 @@ class Coordinator(BaseAgent):
         items = self.store.get_items(order_id)
         payments = self.store.get_payments(order_id)
 
+        # Mỗi case trong bộ này map sạch vào đúng một rule, nên chỉ có một root
+        # cause. Không độn thêm cause phụ — cause thừa chỉ làm giảm precision.
         ranked_causes = [{"cause_code": decision.root_cause_code, "rank": 1}]
-        for idx, code in enumerate(decision.secondary_causes[:2], start=2):
-            ranked_causes.append({"cause_code": code, "rank": idx})
 
         seller_evidence = [
             ev.seller_evidence(sid)

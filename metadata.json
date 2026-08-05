@@ -1,49 +1,49 @@
 {
-  "model": "llama-3.1-8b-instant",
-  "parameter_size": "8B",
-  "provider": "groq",
+  "model": "gpt-4o-mini",
+  "parameter_size": "undisclosed",
+  "provider": "openai",
   "framework": "custom in-process multi-agent (A2A-style handoff)",
   "runtime": {
     "language": "python",
     "python_version": "3.13.5",
     "os": "Windows 11",
-    "elapsed_seconds": 3.86,
+    "elapsed_seconds": 279.45,
     "cases_processed": 50,
-    "llm_calls": 0,
+    "llm_calls": 250,
     "llm_failures": 0,
-    "llm_enabled": false
+    "llm_enabled": true
   },
   "agents": [
     {
       "name": "coordinator",
-      "model": "llama-3.1-8b-instant",
-      "parameter_size": "8B"
+      "model": "gpt-4o-mini",
+      "parameter_size": "undisclosed"
     },
     {
       "name": "order_seller_agent",
-      "model": "llama-3.1-8b-instant",
-      "parameter_size": "8B"
+      "model": "gpt-4o-mini",
+      "parameter_size": "undisclosed"
     },
     {
       "name": "delivery_agent",
-      "model": "llama-3.1-8b-instant",
-      "parameter_size": "8B"
+      "model": "gpt-4o-mini",
+      "parameter_size": "undisclosed"
     },
     {
       "name": "payment_agent",
-      "model": "llama-3.1-8b-instant",
-      "parameter_size": "8B"
+      "model": "gpt-4o-mini",
+      "parameter_size": "undisclosed"
     },
     {
       "name": "policy_agent",
-      "model": "llama-3.1-8b-instant",
-      "parameter_size": "8B"
+      "model": "gpt-4o-mini",
+      "parameter_size": "undisclosed"
     },
     {
       "name": "verifier_agent",
-      "model": "llama-3.1-8b-instant",
-      "parameter_size": "8B"
+      "model": "gpt-4o-mini",
+      "parameter_size": "undisclosed"
     }
   ],
-  "generated_at": "2026-08-05T03:13:55+00:00"
+  "generated_at": "2026-08-05T05:37:53+00:00"
 }

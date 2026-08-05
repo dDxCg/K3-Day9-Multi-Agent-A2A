@@ -19,7 +19,7 @@ class BaseAgent:
 
     # -------------------------------------------------------------- LLM utils
 
-    def ask(self, system: str, user: str, max_tokens: int = 300) -> dict[str, Any]:
+    def ask(self, system: str, user: str, max_tokens: int = 96) -> dict[str, Any]:
         """Gọi LLM, luôn trả dict (rỗng nếu degraded) để caller không phải None-check."""
         result = self.llm.chat_json(system, user, max_tokens=max_tokens)
         return result or {}
@@ -36,10 +36,14 @@ class BaseAgent:
         return round(value, 2)
 
     @staticmethod
-    def blend_confidence(deterministic: float, llm_value: float, weight: float = 0.25) -> float:
-        """Neo vào confidence deterministic, cho LLM tác động có giới hạn."""
-        blended = deterministic * (1 - weight) + llm_value * weight
-        return round(min(max(blended, 0.0), 1.0), 2)
+    def lower_confidence(current: float, factor: float) -> float:
+        """Hạ confidence — một chiều.
+
+        Confidence deterministic được neo vào rule đã khớp và đã có cross-check
+        độc lập; để một model 8B nâng nó lên chỉ thêm phương sai chứ không thêm
+        thông tin. Model chỉ được phép bày tỏ sự nghi ngờ, không được tự tin hộ.
+        """
+        return round(min(max(current * factor, 0.0), 1.0), 2)
 
     # ------------------------------------------------------------ trace utils
 

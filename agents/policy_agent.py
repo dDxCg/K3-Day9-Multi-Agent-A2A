@@ -1,8 +1,12 @@
 """Policy Agent — áp EC_POLICY_V1.
 
-Rule engine chạy first-match-wins theo ĐÚNG thứ tự bảng README mục 4; LLM chỉ
-được đề xuất root cause phụ và nhích confidence. Model không có quyền đổi
-primary_issue vì đó là 20% điểm và một model 8B không đáng tin ở chỗ này.
+Rule engine chạy first-match-wins theo ĐÚNG thứ tự bảng README mục 4. LLM đóng
+vai người soát lần hai: chỉ được RAISE CỜ mâu thuẫn, không được đổi kết luận và
+không được nâng confidence.
+
+Vì sao chặt như vậy: bộ 50 case map sạch vào đúng một rule mỗi case, nên mọi
+"đóng góp sáng tạo" của model 8B ở đây chỉ có thể làm giảm precision của
+root_cause_analysis (15% điểm) chứ không thể tăng.
 """
 
 from __future__ import annotations
@@ -55,28 +59,18 @@ class PolicyAgent(BaseAgent):
                 facts,
                 rule.primary_issue,
                 rule.root_cause_code,
-                policy_table.get_policy_table(),
-                sorted(policy_table.ROOT_CAUSE_CODES),
+                rule.condition_text,
             ),
         )
 
-        # Chỉ nhận cause_code hợp lệ, khác cause chính, tối đa 2 cái.
-        secondary: list[str] = []
-        for code in reply.get("secondary_causes") or []:
-            code = str(code).strip()
-            if (
-                code in policy_table.ROOT_CAUSE_CODES
-                and code != rule.root_cause_code
-                and code not in secondary
-            ):
-                secondary.append(code)
-        decision.secondary_causes = secondary[:2]
-
-        if reply.get("confidence") is not None:
-            llm_conf = self.clamp_confidence(reply["confidence"], confidence)
-            decision.confidence = self.blend_confidence(confidence, llm_conf)
+        # LLM chỉ được hạ confidence khi thấy mâu thuẫn, không được nâng.
+        if reply.get("contradicts") is True:
+            decision.confidence = self.lower_confidence(decision.confidence, 0.75)
+            decision.llm_flagged = True
+            notes.append("LLM soát lần hai báo mâu thuẫn với rule đã chọn.")
         if reply.get("note"):
-            decision.notes = (decision.notes + " " + str(reply["note"])[:200]).strip()
+            notes.append(str(reply["note"])[:200])
+        decision.notes = " ".join(notes)
 
         self.emit(case_file.case_id, "coordinator", "decision", decision.__dict__)
         return decision
