@@ -4,8 +4,8 @@
 
 | Thông tin | Nội dung |
 | --- | --- |
-| Họ và tên | [ĐIỀN HỌ VÀ TÊN] |
-| MSSV / MHV | [ĐIỀN 5 SỐ CUỐI MHV] |
+| Họ và tên | Nguyễn Thanh Hoàn |
+| MSSV / MHV |01201 |
 | Lớp / Khóa | K3 |
 | Vai trò chính | Thiết kế pipeline multi-agent, policy engine, verifier, trace và metadata |
 | Ngày hoàn thành | 2026-08-05 |
@@ -164,6 +164,6 @@ Phần tôi thấy quan trọng nhất là không để LLM quyết định các
 - [x] Có thể chạy lại pipeline để tái sinh output.
 - [ ] Đã điền họ tên và 5 số cuối MHV trước khi nộp.
 
-**Họ và tên:** [ĐIỀN HỌ VÀ TÊN]
+**Họ và tên:** Nguyen Thanh Hoan
 
 **Ngày xác nhận:** 2026-08-05
