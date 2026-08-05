@@ -65,6 +65,8 @@ def main(argv: list[str] | None = None) -> int:
     reset_trace()
     failures: list[str] = []
     unverified: list[str] = []
+    total_llm_calls = 0
+    total_llm_skipped = 0
     for path in paths:
         case = load_case(path)
         case_id = case["case_id"]
@@ -74,12 +76,14 @@ def main(argv: list[str] | None = None) -> int:
             problems = (final.get("verification") or {}).get("problems", [])
             ok = bool((final.get("verification") or {}).get("ok"))
             write_output(case_id, draft)
-            trace_case(
+            record = trace_case(
                 case_id=case_id,
                 order_id=final.get("order_id", ""),
                 output=draft,
                 ok=ok,
             )
+            total_llm_calls += record["n_llm_calls"]
+            total_llm_skipped += sum(1 for s in record["steps"] if s["event"] == "llm_skipped")
             if ok:
                 print(f"[ok] {case_id}")
             else:
@@ -93,8 +97,16 @@ def main(argv: list[str] | None = None) -> int:
     write_metadata(
         cases_run=written,
         notes="; ".join(failures + unverified) or "tất cả case qua verifier",
+        llm_calls=total_llm_calls,
+        llm_skipped=total_llm_skipped,
     )
     print(f"\n{written}/{len(paths)} case ghi ra {OUTPUT_DIR}")
+    print(f"LLM: {total_llm_calls} call thành công, {total_llm_skipped} lần bị skip/lỗi.")
+    if total_llm_calls == 0 and total_llm_skipped > 0:
+        print(
+            "[warn] LLM chưa từng gọi thành công lần nào — kiểm tra API key/provider trong .env.",
+            file=sys.stderr,
+        )
     if unverified:
         print(f"{len(unverified)} case ghi ra nhưng KHÔNG qua verifier:", file=sys.stderr)
         for line in unverified:

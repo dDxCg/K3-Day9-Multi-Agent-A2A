@@ -1,6 +1,6 @@
 {
-  "run_id": "run_20260805T043551Z",
-  "generated_at": "2026-08-05T04:45:39.144964+00:00",
+  "run_id": "run_20260805T051253Z",
+  "generated_at": "2026-08-05T05:22:16.514405+00:00",
   "model": {
     "name": "llama-3.1-8b-instant",
     "provider": "groq",
@@ -23,5 +23,10 @@
     "max_tokens": 1024
   },
   "cases_run": 50,
+  "llm_health": {
+    "n_llm_calls": 192,
+    "n_llm_skipped": 0,
+    "skip_rate": 0.0
+  },
   "notes": "tất cả case qua verifier"
 }

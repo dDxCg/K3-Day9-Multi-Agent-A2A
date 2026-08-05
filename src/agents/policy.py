@@ -160,7 +160,11 @@ def _evidence(
 
 
 def _confidence(state: CaseState, llm_issue: str | None, issue: PrimaryIssue) -> float:
-    """Chốt tất định ở BASE_CONFIDENCE, cộng/trừ theo mức đồng thuận của các agent."""
+    """Chốt tất định ở BASE_CONFIDENCE, cộng/trừ theo mức đồng thuận của các agent.
+
+    Đây là điểm đồng thuận (agreement score) giữa rule engine và LLM, KHÔNG phải
+    xác suất calibrated. Vote thiếu (None, LLM bị skip) không cộng/trừ điểm.
+    """
     findings = state.get("findings", {})
     votes = [findings.get(name, {}).get("llm_agrees") for name in ("order_seller", "payment", "delivery")]
     if llm_issue is not None:

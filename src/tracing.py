@@ -66,8 +66,12 @@ def trace_event(*, case_id: str, agent: str, event: str, payload: dict[str, Any]
         fh.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def trace_case(*, case_id: str, order_id: str, output: dict[str, Any], ok: bool) -> None:
-    """Chốt case: ghi ĐÚNG một dòng vào trace.jsonl, gồm cả chuỗi handoff của case."""
+def trace_case(*, case_id: str, order_id: str, output: dict[str, Any], ok: bool) -> dict[str, Any]:
+    """Chốt case: ghi ĐÚNG một dòng vào trace.jsonl, gồm cả chuỗi handoff của case.
+
+    Trả về record đã ghi để caller (CLI) đếm được llm_call/llm_skipped toàn run
+    mà không phải đọc lại file.
+    """
     LOGGING_DIR.mkdir(parents=True, exist_ok=True)
     steps = _CASE_STEPS.pop(case_id, [])
     assessment = output.get("assessment", {})
@@ -96,9 +100,16 @@ def trace_case(*, case_id: str, order_id: str, output: dict[str, Any], ok: bool)
     }
     with TRACE_PATH.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+    return record
 
 
-def write_metadata(*, cases_run: int, notes: str = "") -> None:
+def write_metadata(
+    *,
+    cases_run: int,
+    notes: str = "",
+    llm_calls: int = 0,
+    llm_skipped: int = 0,
+) -> None:
     """Sinh metadata.json từ CONFIG. Model name lấy từ MODEL_CATALOG, không gõ tay."""
     model = CONFIG.model
     METADATA_PATH.write_text(
@@ -128,6 +139,13 @@ def write_metadata(*, cases_run: int, notes: str = "") -> None:
                     "max_tokens": CONFIG.max_tokens,
                 },
                 "cases_run": cases_run,
+                "llm_health": {
+                    "n_llm_calls": llm_calls,
+                    "n_llm_skipped": llm_skipped,
+                    "skip_rate": round(llm_skipped / (llm_calls + llm_skipped), 3)
+                    if (llm_calls + llm_skipped)
+                    else 0.0,
+                },
                 "notes": notes,
             },
             ensure_ascii=False,
