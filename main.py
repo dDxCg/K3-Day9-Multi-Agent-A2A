@@ -5,7 +5,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.config import Config
+from src.config import EVIDENCE_PROFILES, Config
 from src.coordinator_agent.graph import run_case
 from src.tracer import tracer
 
@@ -21,12 +21,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["FULL", "CAUSAL"],
+        choices=sorted(EVIDENCE_PROFILES),
         default=Config.EVIDENCE_MODE,
         help=(
-            "Evidence composition. FULL emits every existing order/item/seller/"
-            "payment id; CAUSAL emits only the ids the root cause implicates. "
-            f"Default: {Config.EVIDENCE_MODE}."
+            "Evidence profile. FULL emits every existing order/item/seller/payment "
+            "id; CAUSAL emits only the ids the root cause implicates; P1..P3 are "
+            f"single-group probes. Default: {Config.EVIDENCE_MODE}."
         ),
     )
     parser.add_argument(

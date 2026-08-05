@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.config import ALL_KINDS, BROAD_PROFILES, EVIDENCE_PROFILES
 from src.data_store import get_order, get_order_items, get_payments
 
 MAX_ENTITY_IDS = 5
@@ -22,20 +23,6 @@ MAX_EVIDENCE = 10
 MAX_CAUSES = 3
 MAX_PARTIES = 3
 MAX_ACTIONS = 5
-
-# Issues where the seller is not the party at fault, so `seller:` evidence is
-# noise under CAUSAL mode.
-_NON_SELLER_ISSUES = {
-    "late_delivery_logistics",
-    "canceled_order_paid",
-    "unavailable_order_paid",
-    "valid_split_payment",
-    "unsupported_late_claim",
-}
-
-# Issues resolved entirely from order status + payments, where item-level
-# evidence adds nothing under CAUSAL mode.
-_PAYMENT_ONLY_ISSUES = {"canceled_order_paid", "unavailable_order_paid"}
 
 
 def _responsible_seller_ids(decision: dict[str, Any]) -> list[str]:
@@ -104,35 +91,36 @@ def build_evidence(
 ) -> list[str]:
     """Evidence IDs in priority order, capped at 10.
 
-    FULL keeps every existing ID; CAUSAL drops the ones the root cause does
-    not implicate (see `_NON_SELLER_ISSUES` / `_PAYMENT_ONLY_ISSUES`).
+    Which kinds an issue contributes comes from `Config.EVIDENCE_PROFILES`;
+    `order:` and `policy:` are unconditional. Outside the broad FULL baseline,
+    `item:` and `seller:` narrow to the seller actually held responsible.
     """
     issue = decision.get("primary_issue", "")
-    causal = mode == "CAUSAL"
+    profile = EVIDENCE_PROFILES.get(mode, EVIDENCE_PROFILES["FULL"])
+    kinds = profile.get(issue, ALL_KINDS)
+    narrow = mode not in BROAD_PROFILES and bool(facts["causal_seller_ids"])
 
     evidence: list[str] = []
     if facts["order_exists"]:
         evidence.append(f"order:{order_id}")
     evidence.append(f"policy:{decision['cause_code']}")
 
-    if causal and issue in _PAYMENT_ONLY_ISSUES:
-        item_ids: list[str] = []
-        seller_ids: list[str] = []
-    elif causal and issue in _NON_SELLER_ISSUES:
-        item_ids = facts["item_ids"]
-        seller_ids = []
-    elif causal:
-        # Seller at fault: only the offending seller and that seller's items.
-        item_ids = facts["causal_item_ids"] or facts["item_ids"]
-        seller_ids = facts["causal_seller_ids"]
-    else:
-        item_ids = facts["item_ids"]
-        seller_ids = facts["seller_ids"]
+    item_ids: list[str] = []
+    seller_ids: list[str] = []
+    if "item" in kinds:
+        item_ids = (
+            (facts["causal_item_ids"] or facts["item_ids"])
+            if narrow
+            else facts["item_ids"]
+        )
+    if "seller" in kinds:
+        seller_ids = facts["causal_seller_ids"] if narrow else facts["seller_ids"]
+    payment_ids = facts["payment_ids"] if "payment" in kinds else []
 
     ordered = (
         [f"item:{i}" for i in item_ids[:MAX_ENTITY_IDS]]
         + [f"seller:{s}" for s in seller_ids[:MAX_ENTITY_IDS]]
-        + [f"payment:{p}" for p in facts["payment_ids"]]
+        + [f"payment:{p}" for p in payment_ids]
         + [f"item:{i}" for i in item_ids[MAX_ENTITY_IDS:]]
         + [f"seller:{s}" for s in seller_ids[MAX_ENTITY_IDS:]]
     )

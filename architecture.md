@@ -135,9 +135,10 @@ Verifier không tin bất kỳ giá trị nào do LLM báo lên. Với mỗi cas
 
 Mọi lần sửa được ghi vào trace dưới event `verifier_corrections`.
 
-`Config.EVIDENCE_MODE` trong [src/config.py](src/config.py) chọn cách cấu thành evidence:
-`FULL` (mọi id tồn tại) hoặc `CAUSAL` (chỉ id mà nguyên nhân gốc thực sự liên đới —
-bỏ `seller:` khi seller không có lỗi, bỏ `item:` với case lỗi nền tảng).
+`EVIDENCE_PROFILES` trong [src/config.py](src/config.py) khai báo mỗi issue đóng góp
+những loại evidence nào (`item` / `seller` / `payment`); `order:` và `policy:` luôn có.
+`FULL` phát mọi id tồn tại; các profile còn lại chỉ phát id mà nguyên nhân gốc liên đới,
+và thu hẹp `item:` / `seller:` về đúng seller bị quy trách nhiệm.
 
 ## 6. Quan sát và trace
 
@@ -160,11 +161,10 @@ framework và runtime.
 ## 7. Chạy hệ thống
 
 ```bash
-uv run python main.py                        
+uv run python main.py                                     
 # 50 case -> output/, trace, metadata
-uv run python main.py --mode CAUSAL/FULL          
-# chạy lại toàn bộ với evidence CAUSAL/FULL
-uv run python main.py --limit 3             
-# smoke test 3 case đầu
-```
+uv run python main.py --mode CAUSAL                       
+# chạy lại toàn bộ với profile khác
+
+
 
