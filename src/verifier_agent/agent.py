@@ -1,14 +1,28 @@
-"""Verifier Agent: checks evidence ids, amounts and schema limits before
-a case is written to output/. Deterministic (no LLM) — it re-derives
-ground truth straight from the CSVs and corrects/drops anything that
-doesn't match, logging every correction to trace.jsonl.
+"""Verifier Agent: last gate before a case is written to output/.
+
+Deterministic (no LLM). It re-derives every fact it can straight from the
+CSVs — affected entities, evidence IDs, money — so an under-reporting or
+mis-copying agent upstream cannot leak into the submission, and logs every
+correction it makes to trace.jsonl.
 """
 
 from __future__ import annotations
 
+from typing import Any
+
+from src.config import Config
 from src.data_store import get_order, get_order_items, get_payments, get_seller
-from src.schemas import CaseOutput
+from src.schemas import AffectedEntities, CaseOutput
 from src.tracer import tracer
+from src.verifier_agent.evidence import (
+    MAX_ACTIONS,
+    MAX_CAUSES,
+    MAX_EVIDENCE,
+    MAX_PARTIES,
+    build_entities,
+    build_evidence,
+    collect_facts,
+)
 
 AGENT_NAME = "verifier_agent"
 
@@ -21,11 +35,8 @@ KNOWN_CAUSE_CODES = {
     "DELIVERY_WITHIN_ESTIMATE",
 }
 
-MAX_ENTITY_IDS = 5
-MAX_EVIDENCE = 10
-MAX_CAUSES = 3
-MAX_PARTIES = 3
-MAX_ACTIONS = 5
+_FULL_REFUND_ISSUES = {"canceled_order_paid", "unavailable_order_paid"}
+_FREIGHT_REFUND_ISSUES = {"late_delivery_seller", "late_delivery_logistics"}
 
 
 def _valid_evidence(evidence_id: str) -> bool:
@@ -56,21 +67,36 @@ def _valid_evidence(evidence_id: str) -> bool:
     return False
 
 
-def verify_and_fix(case: CaseOutput) -> CaseOutput:
+def verify_and_fix(
+    case: CaseOutput, order_id: str, decision: dict[str, Any]
+) -> CaseOutput:
     corrections: list[str] = []
+    facts = collect_facts(order_id, decision)
 
-    valid_evidence = [e for e in case.evidence_ids if _valid_evidence(e)]
-    dropped = set(case.evidence_ids) - set(valid_evidence)
-    if dropped:
-        corrections.append(f"dropped invalid evidence_ids: {sorted(dropped)}")
-    case.evidence_ids = valid_evidence[:MAX_EVIDENCE]
+    # --- entities and evidence: rebuilt from the CSVs, not from the agents ---
+    rebuilt_entities = build_entities(order_id, facts)
+    reported_entities = case.affected_entities.model_dump()
+    changed = {
+        field: (reported_entities[field], values)
+        for field, values in rebuilt_entities.items()
+        if set(reported_entities[field]) != set(values)
+    }
+    if changed:
+        corrections.append(f"rebuilt affected_entities from CSV: {changed}")
+    case.affected_entities = AffectedEntities(**rebuilt_entities)
 
-    for field_name in ("order_ids", "item_ids", "seller_ids", "payment_ids"):
-        values = getattr(case.affected_entities, field_name)
-        if len(values) > MAX_ENTITY_IDS:
-            corrections.append(f"truncated {field_name} to {MAX_ENTITY_IDS}")
-        setattr(case.affected_entities, field_name, values[:MAX_ENTITY_IDS])
+    rebuilt_evidence = build_evidence(order_id, decision, facts, Config.EVIDENCE_MODE)
+    invalid = [e for e in rebuilt_evidence if not _valid_evidence(e)]
+    if invalid:
+        corrections.append(f"dropped invalid evidence_ids: {invalid}")
+        rebuilt_evidence = [e for e in rebuilt_evidence if e not in invalid]
+    if set(rebuilt_evidence) != set(case.evidence_ids):
+        corrections.append(
+            f"rebuilt evidence_ids from CSV: {case.evidence_ids} -> {rebuilt_evidence}"
+        )
+    case.evidence_ids = rebuilt_evidence[:MAX_EVIDENCE]
 
+    # --- schema limits ---
     if len(case.root_cause_analysis.ranked_causes) > MAX_CAUSES:
         corrections.append("truncated ranked_causes")
         case.root_cause_analysis.ranked_causes = case.root_cause_analysis.ranked_causes[
@@ -90,33 +116,41 @@ def verify_and_fix(case: CaseOutput) -> CaseOutput:
         corrections.append("clamped confidence to [0,1]")
         case.assessment.confidence = clamped
 
+    # --- money: recomputed from the CSVs, refund re-derived from the totals ---
     fin = case.financial_resolution
-    order_ids = case.affected_entities.order_ids
-    if order_ids:
-        order_id = order_ids[0]
-        items = get_order_items(order_id)
-        payments = get_payments(order_id)
-        true_item_total = round(sum(float(i["price"]) for i in items), 2)
-        true_freight_total = round(sum(float(i["freight_value"]) for i in items), 2)
-        true_payment_total = round(sum(float(p["payment_value"]) for p in payments), 2)
+    items = get_order_items(order_id)
+    payments = get_payments(order_id)
+    totals = {
+        "item_total_brl": round(sum(float(i["price"]) for i in items), 2),
+        "freight_total_brl": round(sum(float(i["freight_value"]) for i in items), 2),
+        "payment_total_brl": round(sum(float(p["payment_value"]) for p in payments), 2),
+    }
+    for field_name, true_value in totals.items():
+        current = getattr(fin, field_name)
+        if abs(current - true_value) > 0.01:
+            corrections.append(f"corrected {field_name}: {current} -> {true_value}")
+            setattr(fin, field_name, true_value)
 
-        for field_name, true_value in (
-            ("item_total_brl", true_item_total),
-            ("freight_total_brl", true_freight_total),
-            ("payment_total_brl", true_payment_total),
-        ):
-            current = getattr(fin, field_name)
-            if abs(current - true_value) > 0.01:
-                corrections.append(f"corrected {field_name}: {current} -> {true_value}")
-                setattr(fin, field_name, true_value)
-
-    fin.recommended_refund_brl = round(fin.recommended_refund_brl, 2)
-
-    if case.assessment.case_status not in ("action_required", "no_action"):
-        corrections.append("fixed invalid case_status")
-        case.assessment.case_status = (
-            "action_required" if fin.recommended_refund_brl > 0 else "no_action"
+    issue = case.assessment.primary_issue
+    if issue in _FULL_REFUND_ISSUES:
+        expected_refund = fin.payment_total_brl
+    elif issue in _FREIGHT_REFUND_ISSUES:
+        expected_refund = fin.freight_total_brl
+    else:
+        expected_refund = 0.0
+    if abs(fin.recommended_refund_brl - expected_refund) > 0.01:
+        corrections.append(
+            f"corrected recommended_refund_brl: {fin.recommended_refund_brl} "
+            f"-> {expected_refund}"
         )
+    fin.recommended_refund_brl = round(expected_refund, 2)
+
+    expected_status = "action_required" if fin.recommended_refund_brl > 0 else "no_action"
+    if case.assessment.case_status != expected_status:
+        corrections.append(
+            f"corrected case_status: {case.assessment.case_status} -> {expected_status}"
+        )
+        case.assessment.case_status = expected_status
 
     if corrections:
         tracer.log(

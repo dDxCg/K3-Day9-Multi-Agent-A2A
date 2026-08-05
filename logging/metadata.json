@@ -19,13 +19,13 @@
     "verifier_agent (deterministic, no LLM)"
   ],
   "cases_processed": 50,
-  "started_at": "2026-08-05T03:26:00.157287+00:00",
-  "finished_at": "2026-08-05T03:39:06.951724+00:00",
+  "started_at": "2026-08-05T04:03:09.969626+00:00",
+  "finished_at": "2026-08-05T04:17:18.056757+00:00",
   "token_usage_by_agent": {
     "order_and_seller_agent": {
       "input_tokens": 75464,
-      "output_tokens": 14206,
-      "total_tokens": 89670
+      "output_tokens": 14229,
+      "total_tokens": 89693
     },
     "delivery_agent": {
       "input_tokens": 38832,
@@ -33,9 +33,9 @@
       "total_tokens": 45568
     },
     "payment_agent": {
-      "input_tokens": 60106,
-      "output_tokens": 12335,
-      "total_tokens": 72441
+      "input_tokens": 60112,
+      "output_tokens": 12236,
+      "total_tokens": 72348
     }
   }
 }

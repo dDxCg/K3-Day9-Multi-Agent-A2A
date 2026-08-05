@@ -81,6 +81,7 @@ def _policy_node(state: CaseState) -> dict:
         OrderSellerReport(**state["order_seller_report"]),
         DeliveryReport(**state["delivery_report"]),
         PaymentReport(**state["payment_report"]),
+        state.get("opened_at", ""),
     )
     return {"policy_decision": response.data}
 
@@ -90,12 +91,14 @@ def _assemble_node(state: CaseState) -> dict:
     payment = state["payment_report"]
     decision = state["policy_decision"]
 
+    # Provisional: the verifier rebuilds both entities and evidence from the
+    # CSVs, so what the agents reported here is only a starting point.
     evidence_ids = list(
         dict.fromkeys(
-            osr.get("evidence_ids", [])
+            [f"policy:{decision['cause_code']}"]
+            + osr.get("evidence_ids", [])
             + state["delivery_report"].get("evidence_ids", [])
             + payment.get("evidence_ids", [])
-            + [f"policy:{decision['cause_code']}"]
         )
     )
 
@@ -132,7 +135,11 @@ def _assemble_node(state: CaseState) -> dict:
 
 
 def _verifier_node(state: CaseState) -> dict:
-    verified = verify_and_fix(CaseOutput(**state["case_output"]))
+    verified = verify_and_fix(
+        CaseOutput(**state["case_output"]),
+        state["order_id"],
+        state["policy_decision"],
+    )
     return {"case_output": verified.model_dump()}
 
 
@@ -173,6 +180,7 @@ def run_case(case_input: dict) -> dict:
         "order_id": case_input["customer_request"]["claimed_order_id"],
         "customer_message": case_input["customer_request"]["message"],
         "policy_version": case_input.get("policy_version", ""),
+        "opened_at": case_input.get("opened_at", ""),
     }
     final_state = graph.invoke(state, config={"run_id": uuid.uuid4()})
     tracer.log("case_end", case_id=case_id)

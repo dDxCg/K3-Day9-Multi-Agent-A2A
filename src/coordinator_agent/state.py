@@ -8,6 +8,7 @@ class CaseState(TypedDict, total=False):
     order_id: str
     customer_message: str
     policy_version: str
+    opened_at: str
     order_seller_report: dict[str, Any]
     delivery_report: dict[str, Any]
     payment_report: dict[str, Any]
