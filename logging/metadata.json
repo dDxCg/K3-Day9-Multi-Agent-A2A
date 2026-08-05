@@ -1,0 +1,68 @@
+{
+  "project": "K3 Day 09 - Multi-Agent E-commerce Dispute Resolution",
+  "pipeline_version": "1.0.0",
+  "policy_version": "EC_POLICY_V1",
+  "model": {
+    "provider": "Google",
+    "name": "gemini-2.5-flash-lite",
+    "parameter_count": "not publicly disclosed",
+    "assignment_limit": "<=10B parameters per agent",
+    "compliance_status": "not independently verifiable",
+    "temperature": 0.0,
+    "top_p": 0.95,
+    "max_output_tokens": 128
+  },
+  "framework": {
+    "name": "Custom Python multi-agent orchestration",
+    "version": "1.0.0",
+    "dependencies": "Python standard library only"
+  },
+  "runtime": {
+    "python": "3.10.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "llm_review_enabled": true,
+    "api_key_env": "GOOGLE_API_KEY",
+    "api_key_present": true
+  },
+  "output_provenance": {
+    "generated_by": "src/dispute_resolution/pipeline.py",
+    "decision_source": "EC_POLICY_V1 deterministic policy engine",
+    "write_mode": "code_only_atomic",
+    "llm_can_modify_output": false,
+    "manual_output_edits": false,
+    "output_digest_sha256": "17f6ea117894b1ce8251436fafc6eb9d7379cbd7f453f1eadc338d795d1f813a"
+  },
+  "agents": [
+    "CoordinatorAgent",
+    "OrderSellerAgent",
+    "PaymentAgent",
+    "DeliveryAgent",
+    "PolicyAgent",
+    "GeminiPolicyReviewerAgent",
+    "VerifierAgent"
+  ],
+  "run": {
+    "run_id": "e02d4cb8bb7c479ab7903353d36f8176",
+    "started_at": "2026-08-05T04:48:23.355053+00:00",
+    "completed_at": "2026-08-05T04:51:42.283702+00:00",
+    "duration_seconds": 198.929,
+    "case_count": 50,
+    "output_count": 50,
+    "issue_counts": {
+      "canceled_order_paid": 8,
+      "late_delivery_logistics": 8,
+      "late_delivery_seller": 8,
+      "unavailable_order_paid": 8,
+      "unsupported_late_claim": 9,
+      "valid_split_payment": 9
+    },
+    "llm_review_counts": {
+      "success": 50
+    },
+    "zip_file": "output.zip"
+  },
+  "security": {
+    "secrets_logged": false,
+    "env_committed": false
+  }
+}
