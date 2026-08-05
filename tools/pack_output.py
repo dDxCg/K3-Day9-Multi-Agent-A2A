@@ -75,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     ZIP_PATH.unlink(missing_ok=True)
     with zipfile.ZipFile(ZIP_PATH, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for name in wanted:
-            zf.write(OUTPUT_DIR / name, arcname=name)
+            zf.write(OUTPUT_DIR / name, arcname=f"output/{name}")
 
     if skipped:
         print(f"Đã loại khỏi zip: {', '.join(skipped)}\n")
