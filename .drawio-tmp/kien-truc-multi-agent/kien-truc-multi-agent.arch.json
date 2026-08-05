@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "title": "Kiến trúc multi-agent — K3 Day 9 Olist Dispute Resolution (LangGraph)",
+  "type": "flow-diagram",
+  "source": "generated",
+  "profile": "default",
+  "theme": "arch-dark",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 16,
+    "edges": 13,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "t_tier0",
+      "label": "ĐIỀU PHỐI",
+      "type": "text"
+    },
+    {
+      "id": "t_tier1",
+      "label": "3 DOMAIN AGENT — FAN-OUT SONG SONG",
+      "type": "text"
+    },
+    {
+      "id": "t_tier2",
+      "label": "KẾT LUẬN & KIỂM CHỨNG",
+      "type": "text"
+    },
+    {
+      "id": "t_tier3",
+      "label": "TẦNG DỮ LIỆU",
+      "type": "text"
+    },
+    {
+      "id": "case_in",
+      "label": "Case khiếu nại\ninput/EC_xxx.json",
+      "type": "user"
+    },
+    {
+      "id": "coordinator",
+      "label": "Coordinator\nDựng bundle_view",
+      "type": "agent"
+    },
+    {
+      "id": "order_seller",
+      "label": "Order & Seller Agent\nTrạng thái · Seller · Limit",
+      "type": "agent"
+    },
+    {
+      "id": "payment",
+      "label": "Payment Agent\nĐối soát payment",
+      "type": "agent"
+    },
+    {
+      "id": "delivery",
+      "label": "Delivery Agent\nSo hạn giao hàng",
+      "type": "agent"
+    },
+    {
+      "id": "policy",
+      "label": "Policy Agent\nEC_POLICY_V1",
+      "type": "tool"
+    },
+    {
+      "id": "verifier",
+      "label": "Verifier Agent\nSchema · Evidence · Tiền",
+      "type": "tool"
+    },
+    {
+      "id": "finalize",
+      "label": "Coordinator · finalize",
+      "type": "agent"
+    },
+    {
+      "id": "out_json",
+      "label": "output/EC_xxx.json",
+      "type": "document"
+    },
+    {
+      "id": "data_store",
+      "label": "data_store\ndata/*.csv — 9 bảng Olist",
+      "type": "database"
+    },
+    {
+      "id": "trace_log",
+      "label": "logging/trace.jsonl",
+      "type": "document"
+    },
+    {
+      "id": "legend",
+      "label": "Chú giải  ·  xám liền = luồng chính  ·  cam = fan-out bundle_view  ·  xám đứt = nộp findings\nxanh lá liền = đọc CSV  ·  xanh lá đứt = ghi trace  ·  Policy không được đọc lại CSV",
+      "type": "text"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "case_in",
+      "to": "coordinator",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "coordinator",
+      "to": "order_seller",
+      "type": "control"
+    },
+    {
+      "id": "edge-3",
+      "from": "coordinator",
+      "to": "payment",
+      "type": "control",
+      "label": "bundle_view"
+    },
+    {
+      "id": "edge-4",
+      "from": "coordinator",
+      "to": "delivery",
+      "type": "control"
+    },
+    {
+      "id": "edge-5",
+      "from": "order_seller",
+      "to": "policy",
+      "type": "async"
+    },
+    {
+      "id": "edge-6",
+      "from": "payment",
+      "to": "policy",
+      "type": "async",
+      "label": "findings"
+    },
+    {
+      "id": "edge-7",
+      "from": "delivery",
+      "to": "policy",
+      "type": "async"
+    },
+    {
+      "id": "edge-8",
+      "from": "policy",
+      "to": "verifier",
+      "type": "primary",
+      "label": "draft"
+    },
+    {
+      "id": "edge-9",
+      "from": "verifier",
+      "to": "finalize",
+      "type": "primary",
+      "label": "verification"
+    },
+    {
+      "id": "edge-10",
+      "from": "finalize",
+      "to": "out_json",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "coordinator",
+      "to": "data_store",
+      "type": "memory_read",
+      "label": "đọc CSV · dựng OrderBundle"
+    },
+    {
+      "id": "edge-12",
+      "from": "verifier",
+      "to": "data_store",
+      "type": "memory_read",
+      "label": "đối chiếu evidence"
+    },
+    {
+      "id": "edge-13",
+      "from": "finalize",
+      "to": "trace_log",
+      "type": "memory_write",
+      "label": "mọi node ghi 1 dòng"
+    }
+  ],
+  "modules": []
+}

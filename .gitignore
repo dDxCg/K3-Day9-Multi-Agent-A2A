@@ -1,0 +1,21 @@
+# secrets
+.env
+.env.local
+
+# python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# submission artifact (chỉ zip output/ khi nộp, không commit zip)
+*.zip
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

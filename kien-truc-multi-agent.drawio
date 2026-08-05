@@ -1,0 +1,140 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="0">
+    <mxGraphModel dx="2845" dy="1290" grid="1" gridSize="8" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2792" pageHeight="1048" background="#020617" math="1" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="text;html=1;whiteSpace=wrap;labelBackgroundColor=none;fillColor=none;strokeColor=none;strokeWidth=0;fontColor=#F1F5F9;fontSize=16;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;align=left;verticalAlign=top" value="ĐIỀU PHỐI" vertex="1">
+          <mxGeometry height="35" width="107" x="584" y="296" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="text;html=1;whiteSpace=wrap;labelBackgroundColor=none;fillColor=none;strokeColor=none;strokeWidth=0;fontColor=#F1F5F9;fontSize=16;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;align=left;verticalAlign=top" value="3 DOMAIN AGENT — FAN-OUT SONG SONG" vertex="1">
+          <mxGeometry height="35" width="344" x="904" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="text;html=1;whiteSpace=wrap;labelBackgroundColor=none;fillColor=none;strokeColor=none;strokeWidth=0;fontColor=#F1F5F9;fontSize=16;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;align=left;verticalAlign=top" value="KẾT LUẬN &amp; KIỂM CHỨNG" vertex="1">
+          <mxGeometry height="35" width="222" x="1592" y="272" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="1" style="text;html=1;whiteSpace=wrap;labelBackgroundColor=none;fillColor=none;strokeColor=none;strokeWidth=0;fontColor=#F1F5F9;fontSize=16;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;align=left;verticalAlign=top" value="TẦNG DỮ LIỆU" vertex="1">
+          <mxGeometry height="35" width="136" x="1192" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="1" style="ellipse;html=1;whiteSpace=wrap;fillColor=#0E3A47;strokeColor=#22D3EE;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="Case khiếu nại&lt;br&gt;input/EC_xxx.json" vertex="1">
+          <mxGeometry height="64" width="168" x="160" y="352" as="geometry" />
+        </mxCell>
+        <mxCell id="7" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;html=1;whiteSpace=wrap;fillColor=#0E3A47;strokeColor=#22D3EE;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="Coordinator&lt;br&gt;Dựng bundle_view" vertex="1">
+          <mxGeometry height="64" width="160" x="544" y="352" as="geometry" />
+        </mxCell>
+        <mxCell id="8" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;html=1;whiteSpace=wrap;fillColor=#0E3A47;strokeColor=#22D3EE;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="Order &amp; Seller Agent&lt;br&gt;Trạng thái · Seller · Limit" vertex="1">
+          <mxGeometry height="64" width="240" x="944" y="152" as="geometry" />
+        </mxCell>
+        <mxCell id="9" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;html=1;whiteSpace=wrap;fillColor=#0E3A47;strokeColor=#22D3EE;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="Payment Agent&lt;br&gt;Đối soát payment" vertex="1">
+          <mxGeometry height="64" width="160" x="984" y="352" as="geometry" />
+        </mxCell>
+        <mxCell id="10" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;html=1;whiteSpace=wrap;fillColor=#0E3A47;strokeColor=#22D3EE;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="Delivery Agent&lt;br&gt;So hạn giao hàng" vertex="1">
+          <mxGeometry height="64" width="160" x="984" y="552" as="geometry" />
+        </mxCell>
+        <mxCell id="11" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#1E293B;strokeColor=#94A3B8;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="Policy Agent&lt;br&gt;EC_POLICY_V1" vertex="1">
+          <mxGeometry height="64" width="128" x="1440" y="352" as="geometry" />
+        </mxCell>
+        <mxCell id="12" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#1E293B;strokeColor=#94A3B8;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="Verifier Agent&lt;br&gt;Schema · Evidence · Tiền" vertex="1">
+          <mxGeometry height="64" width="216" x="1792" y="352" as="geometry" />
+        </mxCell>
+        <mxCell id="13" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;html=1;whiteSpace=wrap;fillColor=#0E3A47;strokeColor=#22D3EE;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="Coordinator · finalize" vertex="1">
+          <mxGeometry height="60" width="200" x="2184" y="352" as="geometry" />
+        </mxCell>
+        <mxCell id="14" parent="1" style="shape=document;boundedLbl=1;html=1;whiteSpace=wrap;fillColor=#1E293B;strokeColor=#94A3B8;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="output/EC_xxx.json" vertex="1">
+          <mxGeometry height="60" width="176" x="2536" y="352" as="geometry" />
+        </mxCell>
+        <mxCell id="15" parent="1" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;html=1;whiteSpace=wrap;fillColor=#3B2A63;strokeColor=#A78BFA;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="data_store&lt;br&gt;data/*.csv — 9 bảng Olist" vertex="1">
+          <mxGeometry height="64" width="224" x="1152" y="768" as="geometry" />
+        </mxCell>
+        <mxCell id="16" parent="1" style="shape=document;boundedLbl=1;html=1;whiteSpace=wrap;fillColor=#1E293B;strokeColor=#94A3B8;strokeWidth=1.5;fontColor=#F1F5F9;fontSize=13;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;verticalAlign=middle;align=center" value="logging/trace.jsonl" vertex="1">
+          <mxGeometry height="60" width="184" x="2192" y="768" as="geometry" />
+        </mxCell>
+        <mxCell id="17" parent="1" style="text;html=1;whiteSpace=wrap;labelBackgroundColor=none;fillColor=none;strokeColor=none;strokeWidth=0;fontColor=#F1F5F9;fontSize=16;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;align=left;verticalAlign=top" value="Chú giải  ·  xám liền = luồng chính  ·  cam = fan-out bundle_view  ·  xám đứt = nộp findings&lt;br&gt;xanh lá liền = đọc CSV  ·  xanh lá đứt = ghi trace  ·  Policy không được đọc lại CSV" vertex="1">
+          <mxGeometry height="64" width="1400" x="600" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="18" edge="1" parent="1" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;jumpStyle=arc;jumpSize=8" target="7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="19" edge="1" parent="1" source="7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FB923C;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;jumpStyle=arc;jumpSize=8" target="8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="20" edge="1" parent="1" source="7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FB923C;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;jumpStyle=arc;jumpSize=8" target="9" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" connectable="0" parent="20" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=18;fontColor=#94A3B8;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;" value="bundle_view" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="-52" y="-18" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="22" edge="1" parent="1" source="7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FB923C;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.8;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;jumpStyle=arc;jumpSize=8" target="10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="23" edge="1" parent="1" source="8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.2;entryDx=0;entryDy=0;dashed=1;dashPattern=4 2;jumpStyle=arc;jumpSize=8" target="11" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="24" edge="1" parent="1" source="9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;dashPattern=4 2;jumpStyle=arc;jumpSize=8" target="11" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="25" connectable="0" parent="24" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=18;fontColor=#94A3B8;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;" value="findings" vertex="1">
+          <mxGeometry relative="1" x="0.2" as="geometry">
+            <mxPoint y="-18" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="26" edge="1" parent="1" source="10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;dashed=1;dashPattern=4 2;jumpStyle=arc;jumpSize=8" target="11" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="27" edge="1" parent="1" source="11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;jumpStyle=arc;jumpSize=8" target="12" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="28" connectable="0" parent="27" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=18;fontColor=#94A3B8;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;" value="draft" vertex="1">
+          <mxGeometry relative="1" x="0.5" as="geometry">
+            <mxPoint y="-22" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="29" edge="1" parent="1" source="12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.4688;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;jumpStyle=arc;jumpSize=8" target="13" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="30" connectable="0" parent="29" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=18;fontColor=#94A3B8;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;" value="verification" vertex="1">
+          <mxGeometry relative="1" x="0.5" as="geometry">
+            <mxPoint x="-44" y="-22" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="31" edge="1" parent="1" source="13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;jumpStyle=arc;jumpSize=8" target="14" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="32" edge="1" parent="1" source="7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#34D399;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;jumpStyle=arc;jumpSize=8" target="15" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="620" y="800" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="33" connectable="0" parent="32" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=18;fontColor=#94A3B8;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;" value="đọc CSV · dựng OrderBundle" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint y="-20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="34" edge="1" parent="1" source="12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#34D399;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;jumpStyle=arc;jumpSize=8" target="15" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1900" y="800" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="35" connectable="0" parent="34" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=18;fontColor=#94A3B8;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;" value="đối chiếu evidence" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint y="-20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="36" edge="1" parent="1" source="13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#34D399;strokeWidth=1.5;endArrow=open;endFill=0;endSize=12;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 3;jumpStyle=arc;jumpSize=8" target="16" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="37" connectable="0" parent="36" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=18;fontColor=#94A3B8;fontFamily=Inter, Roboto, system-ui, -apple-system, sans-serif;" value="mọi node ghi 1 dòng" vertex="1">
+          <mxGeometry relative="1" x="0.5" as="geometry">
+            <mxPoint x="112" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

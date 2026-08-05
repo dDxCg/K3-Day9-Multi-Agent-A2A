@@ -1,0 +1,193 @@
+meta:
+  title: Kiến trúc multi-agent — K3 Day 9 Olist Dispute Resolution (LangGraph)
+  theme: arch-dark
+  layout: horizontal
+  canvas: auto
+  routing: orthogonal
+nodes:
+  - id: t_tier0
+    label: ĐIỀU PHỐI
+    type: text
+    position:
+      x: 620
+      'y': 290
+  - id: t_tier1
+    label: 3 DOMAIN AGENT — FAN-OUT SONG SONG
+    type: text
+    position:
+      x: 1060
+      'y': 60
+  - id: t_tier2
+    label: KẾT LUẬN & KIỂM CHỨNG
+    type: text
+    position:
+      x: 1700
+      'y': 290
+  - id: t_tier3
+    label: TẦNG DỮ LIỆU
+    type: text
+    position:
+      x: 1260
+      'y': 700
+  - id: case_in
+    label: |-
+      Case khiếu nại
+      input/EC_xxx.json
+    type: user
+    position:
+      x: 240
+      'y': 380
+  - id: coordinator
+    label: |-
+      Coordinator
+      Dựng bundle_view
+    type: agent
+    position:
+      x: 620
+      'y': 380
+  - id: order_seller
+    label: |-
+      Order & Seller Agent
+      Trạng thái · Seller · Limit
+    type: agent
+    position:
+      x: 1060
+      'y': 180
+  - id: payment
+    label: |-
+      Payment Agent
+      Đối soát payment
+    type: agent
+    position:
+      x: 1060
+      'y': 380
+  - id: delivery
+    label: |-
+      Delivery Agent
+      So hạn giao hàng
+    type: agent
+    position:
+      x: 1060
+      'y': 580
+  - id: policy
+    label: |-
+      Policy Agent
+      EC_POLICY_V1
+    type: tool
+    position:
+      x: 1500
+      'y': 380
+  - id: verifier
+    label: |-
+      Verifier Agent
+      Schema · Evidence · Tiền
+    type: tool
+    position:
+      x: 1900
+      'y': 380
+  - id: finalize
+    label: Coordinator · finalize
+    type: agent
+    position:
+      x: 2280
+      'y': 380
+  - id: out_json
+    label: output/EC_xxx.json
+    type: document
+    position:
+      x: 2620
+      'y': 380
+  - id: data_store
+    label: |-
+      data_store
+      data/*.csv — 9 bảng Olist
+    type: database
+    position:
+      x: 1260
+      'y': 800
+  - id: trace_log
+    label: logging/trace.jsonl
+    type: document
+    position:
+      x: 2280
+      'y': 800
+  - id: legend
+    label: |-
+      Chú giải  ·  xám liền = luồng chính  ·  cam = fan-out bundle_view  ·  xám đứt = nộp findings
+      xanh lá liền = đọc CSV  ·  xanh lá đứt = ghi trace  ·  Policy không được đọc lại CSV
+    type: text
+    bounds:
+      x: 600
+      'y': 900
+      width: 1400
+      height: 64
+edges:
+  - from: case_in
+    to: coordinator
+    type: primary
+  - from: coordinator
+    to: order_seller
+    type: control
+  - from: coordinator
+    to: payment
+    type: control
+    label: bundle_view
+    labelPosition: end
+    labelOffset:
+      x: 0
+      'y': -18
+  - from: coordinator
+    to: delivery
+    type: control
+  - from: order_seller
+    to: policy
+    type: async
+  - from: payment
+    to: policy
+    type: async
+    label: findings
+    labelPosition: start
+    labelOffset:
+      x: 0
+      'y': -18
+  - from: delivery
+    to: policy
+    type: async
+  - from: policy
+    to: verifier
+    type: primary
+    label: draft
+  - from: verifier
+    to: finalize
+    type: primary
+    label: verification
+  - from: finalize
+    to: out_json
+    type: primary
+  - from: coordinator
+    to: data_store
+    type: memory_read
+    label: đọc CSV · dựng OrderBundle
+    labelPosition: end
+    labelOffset:
+      x: 0
+      'y': -20
+    waypoints:
+      - x: 620
+        'y': 800
+  - from: verifier
+    to: data_store
+    type: memory_read
+    label: đối chiếu evidence
+    labelPosition: end
+    labelOffset:
+      x: 0
+      'y': -20
+    waypoints:
+      - x: 1900
+        'y': 800
+  - from: finalize
+    to: trace_log
+    type: memory_write
+    label: mọi node ghi 1 dòng
+modules: []
