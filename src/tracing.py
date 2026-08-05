@@ -27,6 +27,7 @@ from .config import (
     LOGGING_DIR,
     METADATA_PATH,
     POLICY_VERSION,
+    REPO_ROOT,
     TRACE_EVENTS_PATH,
     TRACE_PATH,
 )
@@ -135,3 +136,16 @@ def write_metadata(*, cases_run: int, notes: str = "") -> None:
         + "\n",
         encoding="utf-8",
     )
+    mirror_to_repo_root()
+
+
+def mirror_to_repo_root() -> None:
+    """README mục 8 yêu cầu trace.jsonl và metadata.json nằm 'trong repo'.
+
+    Bản gốc vẫn ở logging/; đây là bản sao ở root cho khớp chữ trong đề.
+    """
+    for source in (TRACE_PATH, METADATA_PATH):
+        if source.exists():
+            (REPO_ROOT / source.name).write_text(
+                source.read_text(encoding="utf-8"), encoding="utf-8"
+            )
