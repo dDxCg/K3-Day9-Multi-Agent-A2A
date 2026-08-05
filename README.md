@@ -199,4 +199,70 @@ Trong repo phải có thêm:
 1. Mỗi agent chỉ được sử dụng model dưới hoặc bằng **10B parameters**, chạy local hoặc qua provider tùy ý.
 2. Khi nộp bài, chỉ nén folder `output/` thành file zip; không đưa source code, `.env` hoặc các file audit vào zip này.
 3. Luôn commit toàn bộ source code lên repo trước khi nộp file output zip để chấm điểm.
-4. API key và secret phải đặt trong file `.env` và không được commit. Tên model sử dụng phải được khai báo rõ trong source code, đồng thời ghi lại trong `metadata.json` (Tức là model name không ghi vào .env, cho vào code để chấm)
+4. API key và secret phải đặt trong file `.env` và không được commit. Tên model sử dụng phải được khai báo rõ trong source code và `metadata.json`; `.env` có thể lặp lại model để điều khiển runtime.
+
+## 10. Cấu hình LLM
+
+Repo hiện gọi Google Gemini API bằng `gemini-2.5-flash-lite`.
+
+- API key: `GOOGLE_API_KEY` trong `.env`.
+- Runtime: Google Generative Language API.
+- Test `generateContent`: thành công, response `OK`.
+- Google không công bố parameter count của model hosted này.
+
+Vì vậy chưa thể chứng minh độc lập model nằm dưới giới hạn 10B của bài lab.
+Nếu hard gate yêu cầu bằng chứng parameter size, phải quay lại local
+`google/gemma-4-E4B-it` (4.5B effective, 8B gồm embeddings) thay vì dùng
+Gemini API.
+
+Không commit API key thật. Không ghi key vào source code, trace, metadata,
+output hoặc báo cáo.
+
+## 11. Pipeline đã triển khai
+
+Source chính nằm trong `src/dispute_resolution/`:
+
+- `data_store.py`: load case-scoped orders, items, payments và seller index.
+- `agents.py`: Order/Seller, Payment, Delivery và Policy agents.
+- `policy.py`: `EC_POLICY_V1` deterministic theo đúng priority.
+- `llm.py`: Gemini reviewer độc lập, có timeout và retry.
+- `validation.py`: schema, evidence, entity và financial verifier.
+- `trace.py`: ghi JSONL theo từng handoff.
+- `pipeline.py`: coordinator, output writer, metadata và zip.
+- `cli.py`: giao diện chạy/validate.
+
+LLM không quyết định số tiền hoặc tạo evidence. Nếu API lỗi, policy engine và
+verifier vẫn sinh kết quả từ dữ liệu CSV.
+
+## 12. Cách chạy
+
+Không cần cài package ngoài standard library.
+
+```powershell
+python -m unittest discover -s tests -v
+python run.py --with-llm --zip
+python run.py --validate-only
+```
+
+Kết quả:
+
+- `output/EC_001.json` đến `output/EC_050.json`;
+- `logging/trace.jsonl` của lượt chạy mới nhất;
+- `logging/metadata.json` của lượt chạy mới nhất;
+- `output.zip` chứa đúng 50 JSON để nộp.
+
+Sanity distribution của bộ input hiện tại:
+
+- 8 `canceled_order_paid`;
+- 8 `unavailable_order_paid`;
+- 8 `late_delivery_seller`;
+- 8 `late_delivery_logistics`;
+- 9 `valid_split_payment`;
+- 9 `unsupported_late_claim`.
+
+## 13. Nguyên tắc nộp bài
+
+Chạy test và final pipeline ngay trước khi nộp. Kiểm tra `metadata.json` có
+`case_count = 50`, `output_count = 50`; kiểm tra `output.zip` có đúng 50 entry.
+Chỉ nộp `output.zip`. Commit source, architecture, metadata, trace và báo cáo
+vào repo; không commit `.env`.

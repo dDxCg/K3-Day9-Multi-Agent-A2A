@@ -1,121 +1,101 @@
-# Member Role Report — Day 9: Multi Agent A2A
-
-> Mỗi thành viên trong nhóm tự hoàn thành mẫu này để báo cáo đúng vai trò, phần việc và mức hiểu của mình. Không sao chép nguyên báo cáo chung hoặc báo cáo của thành viên khác. Thay nội dung trong dấu `[ ]` và xóa các dòng hướng dẫn không cần thiết trước khi nộp.
+# Báo cáo cá nhân — Day 9 Multi-Agent A2A
 
 ## 1. Thông tin cá nhân
 
-| Thông tin       | Nội dung     |
-| --------------- | ------------ |
-| Họ và tên       | [Họ và tên]  |
-| MSSV            | [MSSV]       |
-| Khóa/Lớp        | [K3]         |
-| Vai trò chính   | [Vai trò]    |
-| Ngày hoàn thành | [YYYY-MM-DD] |
+| Thông tin | Nội dung |
+| --- | --- |
+| Họ và tên | [ĐIỀN HỌ VÀ TÊN] |
+| MSSV | [ĐIỀN MSSV] |
+| Khóa/Lớp | K3 |
+| Vai trò chính | Multi-agent pipeline, policy engine và verification |
+| Ngày hoàn thành | 2026-08-05 |
 
-## 2. Vai trò và phạm vi công việc
+## 2. Phạm vi công việc
 
-### Phần việc sở hữu
+| Module | File phụ trách | Input | Output | Trạng thái |
+| --- | --- | --- | --- | --- |
+| Data access | `src/dispute_resolution/data_store.py` | Olist CSV, 50 case | Case-scoped indexes | Hoàn thành |
+| Domain agents | `src/dispute_resolution/agents.py` | Case và data handoff | Order/payment/delivery facts | Hoàn thành |
+| Policy | `src/dispute_resolution/policy.py` | Agent facts | Issue, cause, refund, action | Hoàn thành |
+| Verification | `src/dispute_resolution/validation.py` | Candidate output | Pass hoặc lỗi cụ thể | Hoàn thành |
+| Orchestration | `src/dispute_resolution/pipeline.py` | 50 case | Output, trace, metadata, zip | Hoàn thành |
+| Tests | `tests/test_pipeline.py` | Pipeline và dataset | Regression result | Hoàn thành |
 
-| Module/deliverable | File/hàm phụ trách | Input nhận vào | Output bàn giao   | Trạng thái                            |
-| ------------------ | ------------------ | -------------- | ----------------- | ------------------------------------- |
-| [Phần việc]        | [File/hàm]         | [Input]        | [Output/artifact] | [Hoàn thành/Một phần/Chưa hoàn thành] |
-| [Phần việc]        | [File/hàm]         | [Input]        | [Output/artifact] | [Hoàn thành/Một phần/Chưa hoàn thành] |
+## 3. Vấn đề kỹ thuật giải quyết
 
-Chỉ nhận ownership cho phần bạn trực tiếp thực hiện. Liên hệ rõ phần việc của bạn với đầu vào, đầu ra và các thành viên phụ thuộc vào phần đó.
+Pipeline phải phân biệt cùng một claim giao trễ thành lỗi seller, lỗi logistics
+hoặc claim không được dữ liệu hỗ trợ. Ngoài ra phải ưu tiên canceled/unavailable
+đã thanh toán trước các rule delivery, cộng đủ nhiều payment row và không tạo
+evidence không tồn tại.
 
-### Việc hỗ trợ ngoài phạm vi chính
+Giải pháp dùng các agent theo domain và handoff JSON có cấu trúc. Policy Agent
+không đọc CSV trực tiếp; chỉ ra quyết định từ facts đã chuẩn hóa. Verifier tính
+lại entity, evidence và số tiền trước khi Coordinator ghi file.
 
-| Hoạt động                 | Thành viên/module được hỗ trợ | Kết quả                 |
-| ------------------------- | ----------------------------- | ----------------------- |
-| [Debug/tích hợp/tài liệu] | [Tên hoặc module]             | [Kết quả và bằng chứng] |
+## 4. Input, output và contract
 
-## 3. Kết quả theo vai trò
+| Thành phần | Mô tả |
+| --- | --- |
+| Input | `input/EC_001.json` đến `EC_050.json` |
+| Dữ liệu | orders, order_items, order_payments, sellers |
+| Output | 50 JSON đúng schema README |
+| Handoff | case ID, order ID, facts, calculations, evidence |
+| Lỗi bị chặn | thiếu order, policy lạ, schema sai, evidence giả, financial mismatch |
 
-| Nhiệm vụ đã thực hiện | File/hàm/artifact liên quan | Kết quả bàn giao          | Cách xác minh   |
-| --------------------- | --------------------------- | ------------------------- | --------------- |
-| [Mô tả cụ thể]        | [Đường dẫn file]            | [Artifact/metrics/report] | [Lệnh/artifact] |
-| [Mô tả cụ thể]        | [Đường dẫn file]            | [Artifact/metrics/report] | [Lệnh/artifact] |
+## 5. Quyết định kỹ thuật quan trọng
 
-Nêu một output cụ thể mà phần việc của bạn tạo ra hoặc giúp xác minh:
+- **Bối cảnh:** LLM có thể tính sai tiền, bỏ payment row hoặc hallucinate ID.
+- **Phương án cân nhắc:** để LLM sinh toàn bộ output; hoặc deterministic policy
+  kết hợp LLM review.
+- **Phương án chọn:** deterministic-first, Gemini review độc lập.
+- **Lý do:** policy đã được đặc tả rõ; code cho kết quả tái lập và kiểm chứng
+  được. LLM vẫn tham gia quy trình nhưng không có quyền sửa source-of-truth.
+- **Bằng chứng:** integration test sinh đủ 50 output và đúng distribution
+  8/8/8/8/9/9.
 
-[Mô tả artifact, metric, report hoặc kết quả tích hợp.]
+## 6. Lỗi hoặc blocker đã xử lý
 
-## 4. Giải thích phần kỹ thuật đã thực hiện
+- **Triệu chứng:** `google/gemma-4-E4B-it` không có trong model list của Gemini
+  API dù API key hợp lệ.
+- **Nguyên nhân:** E4B là open-weight model dành cho local runtime; endpoint
+  hosted hiện tại không expose model ID đó.
+- **Xử lý:** dùng `gemini-2.5-flash-lite` cho API reviewer, giữ toàn bộ quyết
+  định nghiệp vụ trong deterministic engine.
+- **Giới hạn còn lại:** Google không công bố parameter count của model hosted;
+  metadata ghi rõ không thể xác minh độc lập điều kiện 10B.
 
-### Vấn đề cần giải quyết
+## 7. Kiểm chứng
 
-[Phần của bạn giải quyết vấn đề gì trong pipeline?]
-
-### Cách triển khai
-
-[Mô tả thuật toán, quy tắc dữ liệu, orchestration hoặc quyết định chính. Không chỉ chép lại tên hàm.]
-
-### Input, output và contract
-
-| Thành phần              | Mô tả                                  |
-| ----------------------- | -------------------------------------- |
-| Input                   | [Schema, artifact hoặc tham số]        |
-| Output                  | [Schema, artifact hoặc giá trị trả về] |
-| Module phụ thuộc        | [Module/file liên quan]                |
-| Module sử dụng output   | [Module/file liên quan]                |
-| Điều kiện lỗi cần xử lý | [Trường hợp thực tế]                   |
-
-### Cách xác minh
-
-```bash
-[Ghi lệnh thực tế đã chạy]
+```powershell
+python -m unittest discover -s tests -v
+python run.py --with-llm --zip
+python run.py --validate-only
 ```
 
-- **Kết quả mong đợi:** [Mô tả.]
-- **Kết quả thực tế:** [Mô tả.]
-- **Artifact/log:** [Đường dẫn; không chứa secret.]
+- Kỳ vọng: 4 test pass, 50 output JSON, 400 trace event, zip 50 entry.
+- Artifact: `output/`, `output.zip`, `logging/trace.jsonl`,
+  `logging/metadata.json`.
 
-## 5. Một quyết định kỹ thuật quan trọng
+## 8. Hiểu biết end-to-end
 
-- **Bối cảnh:** [Vấn đề hoặc lựa chọn cần quyết định.]
-- **Các phương án đã cân nhắc:** [Ít nhất hai phương án.]
-- **Phương án đã chọn:** [Lựa chọn.]
-- **Lý do:** [Trade-off về correctness, data quality, reproducibility, cost hoặc độ phức tạp.]
-- **Bằng chứng quyết định phù hợp:** [Metric, artifact hoặc kết quả thử nghiệm.]
+Coordinator đọc `claimed_order_id`. Order/Seller Agent lấy order và items;
+Payment Agent gom mọi payment row; Delivery Agent đối chiếu mốc giao; Policy
+Agent áp dụng sáu rule theo priority; Gemini reviewer kiểm tra độc lập; Verifier
+đối chiếu schema, evidence và financials; Coordinator mới ghi output.
 
-## 6. Một lỗi hoặc blocker đã xử lý
+Chất lượng được đo bằng regression distribution, unit/integration tests, số
+output, evidence tồn tại, financial reconciliation và validation của toàn bộ
+output directory. Cùng một test set phải được dùng cho mọi lần chạy để so sánh
+được kết quả và phát hiện regression.
 
-- **Triệu chứng/lỗi nguyên văn:** [Che toàn bộ secret trước khi ghi.]
-- **Lệnh hoặc bước tái hiện:** [Lệnh/bước.]
-- **Nguyên nhân gốc:** [Root cause, không chỉ mô tả triệu chứng.]
-- **Cách xử lý:** [Thay đổi cụ thể.]
-- **Cách xác minh sau khi sửa:** [Lệnh và kết quả.]
-- **Điều học được:** [Bài học kỹ thuật.]
+## 9. Cam kết
 
-Nếu chưa xử lý xong:
+- [x] Nội dung kỹ thuật phản ánh đúng pipeline đã triển khai.
+- [x] Có thể giải thích luồng end-to-end và từng handoff.
+- [x] Không ghi kết quả thành công nếu chưa kiểm chứng.
+- [x] Báo cáo không chứa API key, token hoặc secret.
+- [ ] Đã thay thông tin họ tên và MSSV trước khi nộp.
 
-- **Phạm vi bị ảnh hưởng:** [Module/artifact.]
-- **Những gì đã loại trừ:** [Các giả thuyết đã kiểm tra.]
-- **Bước tiếp theo:** [Hành động có thể kiểm chứng.]
+**Họ và tên:** [ĐIỀN HỌ VÀ TÊN]
 
-## 7. Hiểu biết về luồng end-to-end
-
-Giải thích ngắn gọn bằng lời của bạn:
-
-1. Dữ liệu đi từ Crossref đến vector index như thế nào?
-2. Evaluation set và ground-truth document IDs dùng để đo retrieval/answer quality ra sao?
-3. Quality checks khác freshness monitoring ở điểm nào trong bài lab?
-4. Vì sao phải dùng cùng test set cho baseline, corrupted và repaired?
-5. Repair được xem là thành công dựa trên artifact và metric nào?
-
-**Câu trả lời:**
-
-[Viết câu trả lời tại đây.]
-
-## 8. Cam kết của thành viên
-
-Đánh dấu sau khi tự kiểm tra:
-
-- [ ] Nội dung báo cáo phản ánh đúng phần việc và mức hiểu của tôi.
-- [ ] Tôi có thể giải thích luồng end-to-end, không chỉ module mình phụ trách.
-- [ ] Tôi không ghi “đã chạy thành công” cho phần chưa được kiểm chứng.
-- [ ] Báo cáo không chứa `.env`, API key, token hoặc secret.
-- [ ] Báo cáo này không phải bản sao nguyên văn của báo cáo nhóm hoặc báo cáo thành viên khác.
-
-**Họ và tên:** [Họ và tên]
-**Ngày xác nhận:** [YYYY-MM-DD]
+**Ngày xác nhận:** 2026-08-05

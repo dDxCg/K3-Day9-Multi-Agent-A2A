@@ -1,0 +1,60 @@
+{
+  "project": "K3 Day 09 - Multi-Agent E-commerce Dispute Resolution",
+  "pipeline_version": "1.0.0",
+  "policy_version": "EC_POLICY_V1",
+  "model": {
+    "provider": "Google",
+    "name": "gemini-2.5-flash-lite",
+    "parameter_count": "not publicly disclosed",
+    "assignment_limit": "<=10B parameters per agent",
+    "compliance_status": "not independently verifiable",
+    "temperature": 0.2,
+    "top_p": 0.95,
+    "max_output_tokens": 512
+  },
+  "framework": {
+    "name": "Custom Python multi-agent orchestration",
+    "version": "1.0.0",
+    "dependencies": "Python standard library only"
+  },
+  "runtime": {
+    "python": "3.10.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "llm_review_enabled": true,
+    "api_key_env": "GOOGLE_API_KEY",
+    "api_key_present": true
+  },
+  "agents": [
+    "CoordinatorAgent",
+    "OrderSellerAgent",
+    "PaymentAgent",
+    "DeliveryAgent",
+    "PolicyAgent",
+    "GeminiPolicyReviewerAgent",
+    "VerifierAgent"
+  ],
+  "run": {
+    "run_id": "a73c2b32414e440ab67ec912dfacaff2",
+    "started_at": "2026-08-05T03:20:49.945859+00:00",
+    "completed_at": "2026-08-05T03:24:08.211395+00:00",
+    "duration_seconds": 198.266,
+    "case_count": 50,
+    "output_count": 50,
+    "issue_counts": {
+      "canceled_order_paid": 8,
+      "late_delivery_logistics": 8,
+      "late_delivery_seller": 8,
+      "unavailable_order_paid": 8,
+      "unsupported_late_claim": 9,
+      "valid_split_payment": 9
+    },
+    "llm_review_counts": {
+      "success": 50
+    },
+    "zip_file": "output.zip"
+  },
+  "security": {
+    "secrets_logged": false,
+    "env_committed": false
+  }
+}

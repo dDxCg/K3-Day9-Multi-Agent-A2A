@@ -1,0 +1,111 @@
+from __future__ import annotations
+
+import json
+import sys
+import tempfile
+import unittest
+from collections import Counter
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from dispute_resolution.agents import (  # noqa: E402
+    DeliveryAgent,
+    OrderSellerAgent,
+    PaymentAgent,
+    PolicyAgent,
+)
+from dispute_resolution.config import AppConfig  # noqa: E402
+from dispute_resolution.data_store import DataStore  # noqa: E402
+from dispute_resolution.pipeline import DisputeResolutionPipeline  # noqa: E402
+
+
+EXPECTED_COUNTS = {
+    "canceled_order_paid": 8,
+    "late_delivery_logistics": 8,
+    "late_delivery_seller": 8,
+    "unavailable_order_paid": 8,
+    "unsupported_late_claim": 9,
+    "valid_split_payment": 9,
+}
+
+
+class PipelineTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.cases = DataStore.load_cases(ROOT / "input")
+        cls.store = DataStore(ROOT / "data", cls.cases)
+
+    def test_policy_distribution_matches_dataset(self) -> None:
+        order_agent = OrderSellerAgent(self.store)
+        payment_agent = PaymentAgent(self.store)
+        delivery_agent = DeliveryAgent()
+        policy_agent = PolicyAgent()
+        counts: Counter[str] = Counter()
+
+        for case in self.cases:
+            order = order_agent.analyze(case)
+            payment = payment_agent.analyze(case, order)
+            delivery = delivery_agent.analyze(order)
+            decision = policy_agent.analyze(order, payment, delivery)
+            counts[decision.primary_issue] += 1
+
+        self.assertEqual(dict(sorted(counts.items())), EXPECTED_COUNTS)
+
+    def test_full_pipeline_without_llm(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            output_dir = temp_root / "output"
+            trace_path = temp_root / "logging" / "trace.jsonl"
+            metadata_path = temp_root / "logging" / "metadata.json"
+            config = AppConfig.from_root(ROOT)
+            test_config = AppConfig(
+                root=temp_root,
+                data_dir=config.data_dir,
+                input_dir=config.input_dir,
+                output_dir=output_dir,
+                trace_path=trace_path,
+                metadata_path=metadata_path,
+                env_path=config.env_path,
+                model=config.model,
+                google_api_key=config.google_api_key,
+                temperature=config.temperature,
+                top_p=config.top_p,
+                max_output_tokens=config.max_output_tokens,
+                request_timeout_seconds=config.request_timeout_seconds,
+                max_retries=config.max_retries,
+                request_delay_seconds=config.request_delay_seconds,
+            )
+            summary = DisputeResolutionPipeline(test_config, with_llm=False).run()
+
+            self.assertEqual(summary["case_count"], 50)
+            self.assertEqual(summary["output_count"], 50)
+            self.assertEqual(summary["issue_counts"], EXPECTED_COUNTS)
+            self.assertEqual(len(list(output_dir.glob("EC_*.json"))), 50)
+            sample = json.loads((output_dir / "EC_001.json").read_text("utf-8"))
+            self.assertEqual(sample["assessment"]["primary_issue"], "late_delivery_seller")
+
+    def test_priority_canceled_over_delivery_fields(self) -> None:
+        case = next(case for case in self.cases if case.case_id == "EC_008")
+        order_agent = OrderSellerAgent(self.store)
+        payment_agent = PaymentAgent(self.store)
+        order = order_agent.analyze(case)
+        payment = payment_agent.analyze(case, order)
+        delivery = DeliveryAgent().analyze(order)
+        decision = PolicyAgent().analyze(order, payment, delivery)
+        self.assertEqual(decision.primary_issue, "canceled_order_paid")
+
+    def test_unavailable_order_without_items(self) -> None:
+        case = next(case for case in self.cases if case.case_id == "EC_005")
+        order = OrderSellerAgent(self.store).analyze(case)
+        self.assertEqual(order.items, ())
+        self.assertEqual(float(order.item_total), 0.0)
+        self.assertEqual(float(order.freight_total), 0.0)
+
+
+if __name__ == "__main__":
+    unittest.main()
