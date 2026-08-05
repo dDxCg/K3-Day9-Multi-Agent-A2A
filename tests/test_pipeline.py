@@ -88,6 +88,38 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(len(list(output_dir.glob("EC_*.json"))), 50)
             sample = json.loads((output_dir / "EC_001.json").read_text("utf-8"))
             self.assertEqual(sample["assessment"]["primary_issue"], "late_delivery_seller")
+            self.assertEqual(sample["assessment"]["confidence"], 0.92)
+
+            logistics = json.loads(
+                (output_dir / "EC_009.json").read_text("utf-8")
+            )
+            self.assertFalse(
+                any(
+                    evidence.startswith("seller:")
+                    for evidence in logistics["evidence_ids"]
+                )
+            )
+
+            split_payment = json.loads(
+                (output_dir / "EC_025.json").read_text("utf-8")
+            )
+            self.assertFalse(
+                any(
+                    evidence.startswith("seller:")
+                    for evidence in split_payment["evidence_ids"]
+                )
+            )
+
+            canceled = json.loads(
+                (output_dir / "EC_003.json").read_text("utf-8")
+            )
+            self.assertTrue(canceled["affected_entities"]["item_ids"])
+            self.assertFalse(
+                any(
+                    evidence.startswith(("item:", "seller:"))
+                    for evidence in canceled["evidence_ids"]
+                )
+            )
 
     def test_priority_canceled_over_delivery_fields(self) -> None:
         case = next(case for case in self.cases if case.case_id == "EC_008")

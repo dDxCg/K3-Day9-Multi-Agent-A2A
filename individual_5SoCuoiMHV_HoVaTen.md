@@ -72,7 +72,7 @@ python run.py --with-llm --zip
 python run.py --validate-only
 ```
 
-- Kỳ vọng: 4 test pass, 50 output JSON, 400 trace event, zip 50 entry.
+- Kỳ vọng: 7 test pass, 50 output JSON, tối thiểu 400 trace event, zip 50 entry.
 - Artifact: `output/`, `output.zip`, `logging/trace.jsonl`,
   `logging/metadata.json`.
 

@@ -40,9 +40,20 @@ def build_output(
     ][:5]
 
     evidence = [f"order:{order_id}"]
-    evidence.extend(f"item:{item_id}" for item_id in item_ids)
+    if decision.primary_issue not in {
+        "canceled_order_paid",
+        "unavailable_order_paid",
+    }:
+        evidence.extend(f"item:{item_id}" for item_id in item_ids)
     evidence.extend(f"payment:{payment_id}" for payment_id in payment_ids)
-    evidence.extend(f"seller:{seller_id}" for seller_id in seller_ids)
+    # Seller master rows are evidence only when a seller is responsible.
+    # For logistics, payment, canceled, unavailable and rejected claims, the
+    # seller record adds no fact used by EC_POLICY_V1 and lowers evidence precision.
+    if decision.primary_issue == "late_delivery_seller":
+        evidence.extend(
+            f"seller:{seller_id}"
+            for seller_id in order_facts.late_seller_ids[:5]
+        )
     policy_evidence = f"policy:{decision.cause_code}"
     evidence = evidence[:9] + [policy_evidence]
 
@@ -266,7 +277,7 @@ class DisputeResolutionPipeline:
                 "compliance_status": "not independently verifiable",
                 "temperature": self.config.temperature,
                 "top_p": self.config.top_p,
-                "max_output_tokens": min(self.config.max_output_tokens, 512),
+                "max_output_tokens": min(self.config.max_output_tokens, 128),
             },
             "framework": {
                 "name": "Custom Python multi-agent orchestration",

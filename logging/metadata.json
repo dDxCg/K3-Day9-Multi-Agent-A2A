@@ -8,9 +8,9 @@
     "parameter_count": "not publicly disclosed",
     "assignment_limit": "<=10B parameters per agent",
     "compliance_status": "not independently verifiable",
-    "temperature": 0.2,
+    "temperature": 0.0,
     "top_p": 0.95,
-    "max_output_tokens": 512
+    "max_output_tokens": 128
   },
   "framework": {
     "name": "Custom Python multi-agent orchestration",
@@ -34,10 +34,10 @@
     "VerifierAgent"
   ],
   "run": {
-    "run_id": "a73c2b32414e440ab67ec912dfacaff2",
-    "started_at": "2026-08-05T03:20:49.945859+00:00",
-    "completed_at": "2026-08-05T03:24:08.211395+00:00",
-    "duration_seconds": 198.266,
+    "run_id": "a266019afa774bbe9ce0f554433a70ee",
+    "started_at": "2026-08-05T03:47:25.826050+00:00",
+    "completed_at": "2026-08-05T03:50:43.841111+00:00",
+    "duration_seconds": 198.015,
     "case_count": 50,
     "output_count": 50,
     "issue_counts": {

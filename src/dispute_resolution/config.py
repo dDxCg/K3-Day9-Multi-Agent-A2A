@@ -57,7 +57,7 @@ class AppConfig:
             env_path=env_path,
             model=os.getenv("LLM_MODEL", DEFAULT_MODEL),
             google_api_key=os.getenv("GOOGLE_API_KEY", ""),
-            temperature=float(os.getenv("LLM_TEMPERATURE", "0.2")),
+            temperature=float(os.getenv("LLM_TEMPERATURE", "0.0")),
             top_p=float(os.getenv("LLM_TOP_P", "0.95")),
             max_output_tokens=int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "2048")),
             request_timeout_seconds=int(os.getenv("LLM_TIMEOUT_SECONDS", "60")),

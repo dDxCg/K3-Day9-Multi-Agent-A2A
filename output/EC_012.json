@@ -3,7 +3,7 @@
   "assessment": {
     "primary_issue": "late_delivery_logistics",
     "case_status": "action_required",
-    "confidence": 0.99
+    "confidence": 0.92
   },
   "affected_entities": {
     "order_ids": [
@@ -37,7 +37,6 @@
     "order:103de323ece563a1012b4b6adf5a81b2",
     "item:103de323ece563a1012b4b6adf5a81b2:1",
     "payment:103de323ece563a1012b4b6adf5a81b2:1",
-    "seller:634964b17796e64304cadf1ad3050fb7",
     "policy:CARRIER_DELIVERED_AFTER_ESTIMATE"
   ],
   "financial_resolution": {

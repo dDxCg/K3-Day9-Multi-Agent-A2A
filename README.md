@@ -234,6 +234,11 @@ Source chính nằm trong `src/dispute_resolution/`:
 LLM không quyết định số tiền hoặc tạo evidence. Nếu API lỗi, policy engine và
 verifier vẫn sinh kết quả từ dữ liệu CSV.
 
+Evidence được giữ theo nguyên tắc tối thiểu nhưng đủ. Canceled/unavailable dùng
+order, payment và policy. Delivery/payment claims thêm item. `seller:*` chỉ
+nộp khi seller là bên chịu trách nhiệm. Confidence dùng mức `0.92` theo output
+contract mẫu, tránh false precision.
+
 ## 12. Cách chạy
 
 Không cần cài package ngoài standard library.

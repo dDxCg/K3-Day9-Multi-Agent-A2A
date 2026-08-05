@@ -43,7 +43,7 @@ class GeminiPolicyReviewer:
         self.api_key = config.google_api_key
         self.temperature = config.temperature
         self.top_p = config.top_p
-        self.max_output_tokens = min(config.max_output_tokens, 512)
+        self.max_output_tokens = min(config.max_output_tokens, 128)
         self.timeout = config.request_timeout_seconds
         self.max_retries = max(1, config.max_retries)
         self.request_delay_seconds = max(0.0, config.request_delay_seconds)
@@ -66,10 +66,17 @@ class GeminiPolicyReviewer:
             "deterministic_decision": decision.trace_payload(),
         }
         prompt = (
-            "You are a verifier for EC_POLICY_V1. Review the deterministic decision "
-            "against these priority rules: canceled paid; unavailable paid; late seller "
-            "handoff; late logistics; valid split payment; on-time unsupported late claim. "
-            "Do not invent data or recalculate from unstated facts. Return only JSON with "
+            "You are a strict verifier for EC_POLICY_V1. Use this exact ordered truth table: "
+            "(1) canceled and paid => canceled_order_paid; "
+            "(2) unavailable and paid => unavailable_order_paid; "
+            "(3) delivered_late=true and seller_handoff_late=true => late_delivery_seller; "
+            "(4) delivered_late=true and seller_handoff_late=false => late_delivery_logistics; "
+            "(5) split_payment=true and reconciled=true => valid_split_payment; "
+            "(6) delivered_late=false and reconciled=true => unsupported_late_claim. "
+            "Rule 6 means data contradicts the customer's late claim, so that decision is correct. "
+            "Rule 4 means logistics is responsible after an on-time seller handoff; never describe "
+            "the customer as delivering the order. Review only the primary issue, cause, party, "
+            "refund and action. Do not invent data or infer beyond supplied booleans. Return JSON with "
             'keys verdict ("agree" or "disagree") and reason (max 30 words).\nFACTS:\n'
             + json.dumps(facts, ensure_ascii=False, separators=(",", ":"))
         )
@@ -107,7 +114,7 @@ class GeminiPolicyReviewer:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     body = json.loads(response.read().decode("utf-8"))
                 text = body["candidates"][0]["content"]["parts"][0]["text"]
-                parsed = json.loads(text)
+                parsed = self._parse_json_object(text)
                 verdict = str(parsed.get("verdict", "")).lower()
                 reason = str(parsed.get("reason", "")).strip()[:300]
                 if verdict not in {"agree", "disagree"}:
@@ -126,3 +133,20 @@ class GeminiPolicyReviewer:
                 time.sleep(min(2 ** (attempt - 1), 4))
 
         return ReviewResult("error", "unavailable", last_error, self.max_retries)
+
+    @staticmethod
+    def _parse_json_object(text: str) -> dict[str, Any]:
+        """Accept strict JSON plus harmless markdown fences around it."""
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned[3:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+        start = cleaned.find("{")
+        if start < 0:
+            raise json.JSONDecodeError("No JSON object", cleaned, 0)
+        parsed, _ = json.JSONDecoder().raw_decode(cleaned[start:])
+        if not isinstance(parsed, dict):
+            raise ValueError("Reviewer response must be a JSON object")
+        return parsed

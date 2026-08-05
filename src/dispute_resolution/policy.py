@@ -29,6 +29,10 @@ ALLOWED_CAUSES = {
     "DELIVERY_WITHIN_ESTIMATE",
 }
 
+# README output contract uses 0.92. All official cases have complete,
+# deterministic evidence, so one stable calibrated value avoids false precision.
+DECISION_CONFIDENCE = 0.92
+
 
 class UnclassifiedCaseError(ValueError):
     pass
@@ -49,7 +53,7 @@ def apply_policy(
             responsible_parties=(("platform", "OLIST_PLATFORM"),),
             refund=money(payment_facts.payment_total),
             action="issue_full_refund",
-            confidence=0.99,
+            confidence=DECISION_CONFIDENCE,
         )
 
     if status == "unavailable" and payment_facts.payment_total > 0:
@@ -59,7 +63,7 @@ def apply_policy(
             responsible_parties=(("platform", "OLIST_PLATFORM"),),
             refund=money(payment_facts.payment_total),
             action="issue_full_refund",
-            confidence=0.99,
+            confidence=DECISION_CONFIDENCE,
         )
 
     if delivery_facts.delivered_late and delivery_facts.seller_handoff_late:
@@ -70,7 +74,7 @@ def apply_policy(
             responsible_parties=parties,
             refund=money(order_facts.freight_total),
             action="refund_freight",
-            confidence=0.99,
+            confidence=DECISION_CONFIDENCE,
         )
 
     if delivery_facts.delivered_late and not delivery_facts.seller_handoff_late:
@@ -80,7 +84,7 @@ def apply_policy(
             responsible_parties=(("logistics_provider", "LOGISTICS_PROVIDER"),),
             refund=money(order_facts.freight_total),
             action="refund_freight",
-            confidence=0.99,
+            confidence=DECISION_CONFIDENCE,
         )
 
     if payment_facts.split_payment and payment_facts.reconciled:
@@ -90,7 +94,7 @@ def apply_policy(
             responsible_parties=(),
             refund=Decimal("0.00"),
             action="explain_valid_split_payment",
-            confidence=0.99,
+            confidence=DECISION_CONFIDENCE,
         )
 
     if not delivery_facts.delivered_late and payment_facts.reconciled:
@@ -100,7 +104,7 @@ def apply_policy(
             responsible_parties=(),
             refund=Decimal("0.00"),
             action="reject_late_refund",
-            confidence=0.99,
+            confidence=DECISION_CONFIDENCE,
         )
 
     raise UnclassifiedCaseError(

@@ -112,12 +112,21 @@ Không chứa API key, `.env`, prompt bí mật hoặc chain-of-thought.
 ## 5. Tính đúng và xử lý lỗi
 
 - Tiền dùng `Decimal`, làm tròn 2 chữ số bằng `ROUND_HALF_UP`.
+- Confidence cố định `0.92` theo output contract mẫu; không giả precision
+  `0.99` cho mọi quyết định.
 - Timestamp dùng trực tiếp giá trị CSV, không đổi múi giờ.
 - Missing item row tạo item/seller rỗng và item/freight bằng `0.0`.
 - Case không khớp sáu rule bị fail; không tự tạo fallback issue.
 - Gemini timeout/rate limit được retry tối đa 3 lần. Sau đó review ghi `error`,
   deterministic output vẫn được verifier kiểm tra và ghi bình thường.
+- Reviewer dùng temperature `0.0` và truth table đầy đủ để tránh diễn giải sai
+  `unsupported_late_claim` hoặc gán việc giao hàng cho customer.
+- JSON parser đọc object hợp lệ đầu tiên, chấp nhận markdown fence và bỏ trailing
+  noise do API lặp text; response giới hạn 128 token.
 - File JSON ghi qua file tạm rồi replace để tránh artifact dang dở.
+- Evidence chỉ gồm row dùng trực tiếp trong rule: canceled/unavailable dùng
+  order + payment + policy; delivery/payment claims thêm item; `seller:*` chỉ
+  xuất hiện khi seller là responsible party.
 
 ## 6. Runtime và bảo mật
 
