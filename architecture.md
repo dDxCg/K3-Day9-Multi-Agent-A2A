@@ -160,11 +160,11 @@ framework và runtime.
 ## 7. Chạy hệ thống
 
 ```bash
-uv run python main.py                      
+uv run python main.py                        
 # 50 case -> output/, trace, metadata
+uv run python main.py --mode CAUSAL/FULL          
+# chạy lại toàn bộ với evidence CAUSAL/FULL
+uv run python main.py --limit 3             
+# smoke test 3 case đầu
 ```
 
-`scripts/edge_case_check.py` nạp thẳng các order id nằm ngoài phạm vi 50 case chính
-thức — đơn 21 item, đơn 29 payment row, đơn nhiều seller giao trễ, đơn `shipped`
-chưa từng giao và đã quá hạn, đơn `canceled` không có payment, và một order id không
-tồn tại — rồi kiểm tra output vẫn đúng schema và không mất bằng chứng `policy:`.

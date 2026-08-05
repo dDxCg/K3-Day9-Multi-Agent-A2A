@@ -1,3 +1,4 @@
+import argparse
 import json
 import platform
 import sys
@@ -14,12 +15,44 @@ OUTPUT_DIR = ROOT / "output"
 METADATA_PATH = ROOT / "logging" / "metadata.json"
 
 
-def main() -> None:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run the multi-agent dispute pipeline over input/ into output/."
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["FULL", "CAUSAL"],
+        default=Config.EVIDENCE_MODE,
+        help=(
+            "Evidence composition. FULL emits every existing order/item/seller/"
+            "payment id; CAUSAL emits only the ids the root cause implicates. "
+            f"Default: {Config.EVIDENCE_MODE}."
+        ),
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Only process the first N cases (a cheap smoke test).",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+
+    # The verifier reads this when it rebuilds each case's evidence list.
+    Config.EVIDENCE_MODE = args.mode
+
     tracer.start_run()
     started_at = datetime.now(timezone.utc).isoformat()
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     input_files = sorted(INPUT_DIR.glob("EC_*.json"))
+    if args.limit:
+        input_files = input_files[: args.limit]
+
+    print(f"mode={args.mode}  cases={len(input_files)}\n")
 
     processed = []
     for input_path in input_files:
@@ -36,6 +69,7 @@ def main() -> None:
         "model": Config.MODEL,
         "provider": "openrouter",
         "base_url": Config.OPEN_ROUTER_BASE_URL,
+        "evidence_mode": args.mode,
         "framework": ["langchain", "langgraph"],
         "runtime": {
             "python_version": sys.version.split()[0],
