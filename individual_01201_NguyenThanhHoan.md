@@ -162,7 +162,7 @@ Phần tôi thấy quan trọng nhất là không để LLM quyết định các
 - [x] Output được sinh bằng code, không chỉnh tay từng JSON.
 - [x] Có trace, metadata và hash để kiểm chứng provenance.
 - [x] Có thể chạy lại pipeline để tái sinh output.
-- [ ] Đã điền họ tên và 5 số cuối MHV trước khi nộp.
+- [x] Đã điền họ tên và 5 số cuối MHV trước khi nộp.
 
 **Họ và tên:** Nguyen Thanh Hoan
 
