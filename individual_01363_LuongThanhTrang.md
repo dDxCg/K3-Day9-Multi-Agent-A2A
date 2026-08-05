@@ -8,8 +8,8 @@
 | ------------------ | ------------------- |
 | Họ và tên       | Lương Thanh Trang |
 | MSSV               | 2A202601363         |
-| Khóa/Lớp         | [K3]                |
-| Vai trò chính    | [Vai trò]          |
+| Khóa/Lớp         | K3                  |
+| Vai trò chính    | Tự triển khai toàn bộ pipeline (không chia module theo người) — bài lab chạy theo kiểu mỗi thành viên tự làm hết 6 agent + verifier + validator trong checkpoint riêng, sau đó cả nhóm so kết quả với nhau (Cuong, Khuat Van Vuong) trước khi chốt bản nộp chung |
 | Ngày hoàn thành | 2026-08-05          |
 
 ## 2. Vai trò và phạm vi công việc
@@ -18,27 +18,32 @@
 
 | Module/deliverable | File/hàm phụ trách | Input nhận vào | Output bàn giao  | Trạng thái                                 |
 | ------------------ | --------------------- | ---------------- | ----------------- | -------------------------------------------- |
-| [Phần việc]      | [File/hàm]           | [Input]          | [Output/artifact] | [Hoàn thành/Một phần/Chưa hoàn thành] |
-| [Phần việc]      | [File/hàm]           | [Input]          | [Output/artifact] | [Hoàn thành/Một phần/Chưa hoàn thành] |
+| Data layer & bundling | `src/data_store.py`, `src/config.py` | 9 CSV Olist trong `data/` | `OrderBundle` join theo `claimed_order_id` (orders, items, payments, customers) | Hoàn thành |
+| Coordinator + LangGraph | `src/agents/coordinator.py`, `src/graph.py`, `src/main.py` | `input/EC_xxx.json`, `OrderBundle` | `bundle_view` phát cho 3 domain agent, ghi `output/EC_xxx.json` | Hoàn thành |
+| Order & Seller / Payment / Delivery Agent | `src/agents/order_seller.py`, `payment.py`, `delivery.py` | `bundle_view` (lát cắt tương ứng) | `findings.order_seller/payment/delivery` (fan-out song song) | Hoàn thành |
+| Policy Agent | `src/agents/policy.py`, `src/schema.py` | `state.findings` (không đọc lại CSV) | `draft` (primary_issue, refund, evidence, action) | Hoàn thành |
+| Verifier Agent + validator độc lập | `src/agents/verifier.py`, `tools/validate_output.py` | `draft` + `bundle_view` | `verification`, báo cáo khớp/lệch so với CSV tính lại bằng pandas | Hoàn thành |
+| Trace & metadata | `src/tracing.py`, `logging/trace.jsonl`, `logging/trace_events.jsonl`, `metadata.json` | sự kiện mỗi agent trong 1 lượt `--all` | trace 50/50 case, metadata model/runtime | Hoàn thành |
+| Kiến trúc & tài liệu | `architecture.md`, `kien-truc-multi-agent.drawio/.svg` | luồng handoff thực tế trong code | sơ đồ agent, bảng quyền truy cập, bảng trạng thái kiểm chứng | Hoàn thành |
 
-Chỉ nhận ownership cho phần bạn trực tiếp thực hiện. Liên hệ rõ phần việc của bạn với đầu vào, đầu ra và các thành viên phụ thuộc vào phần đó.
+Vì cách tổ chức lab là "ai cũng làm hết một lượt rồi so sánh", bảng trên liệt kê toàn bộ pipeline do tôi tự chạy và tự kiểm chứng, không phải một lát cắt module do người khác giao.
 
 ### Việc hỗ trợ ngoài phạm vi chính
 
 | Hoạt động                  | Thành viên/module được hỗ trợ | Kết quả                    |
 | ----------------------------- | ------------------------------------ | ---------------------------- |
-| [Debug/tích hợp/tài liệu] | [Tên hoặc module]                  | [Kết quả và bằng chứng] |
+| So sánh kết quả phân loại `primary_issue` trên cùng 50 case | Bài làm của Cuong, Khuat Van Vuong (cùng repo, commit `b26ab92`, `c270ab5`, `5552f79`) | Đối chiếu để phát hiện case lệch quy tắc ưu tiên trước khi chốt bản nộp chung |
+| Rà lại yêu cầu README mục 8 (trace/metadata phải nằm ở root repo) | Toàn nhóm | Phát hiện thiếu, bổ sung `mirror_to_repo_root()` — xem mục 6 |
 
 ## 3. Kết quả theo vai trò
 
 | Nhiệm vụ đã thực hiện | File/hàm/artifact liên quan | Kết quả bàn giao       | Cách xác minh  |
 | --------------------------- | ----------------------------- | ------------------------- | ---------------- |
-| [Mô tả cụ thể]          | [Đường dẫn file]          | [Artifact/metrics/report] | [Lệnh/artifact] |
-| [Mô tả cụ thể]          | [Đường dẫn file]          | [Artifact/metrics/report] | [Lệnh/artifact] |
+| Chạy full pipeline 50 case qua LangGraph | `src/main.py`, `logging/trace.jsonl` | 50/50 file `output/EC_001.json`…`EC_050.json`, mỗi case đi đủ 7 node (fan-out 3 domain agent, hội tụ Policy, Verifier) | `py -3 -m src.main --all`, đếm dòng `logging/trace.jsonl` khớp 50 case |
+| Đối chiếu độc lập bằng validator không dùng LLM | `tools/validate_output.py` | Validator tự suy `primary_issue`, refund, evidence từ CSV bằng pandas rồi so với `output/`, không import `src/` | `py -3 tools/validate_output.py` — khớp 50/50, 0 evidence sai định dạng/không có thật |
+| Vẽ và chốt kiến trúc agent | `architecture.md`, `kien-truc-multi-agent.drawio/.svg` | Sơ đồ handoff, bảng quyền đọc/ghi từng agent, bảng trạng thái đã kiểm chứng theo từng thành phần | Đối chiếu từng dòng bảng mục 5 `architecture.md` với `trace.jsonl` |
 
-Nêu một output cụ thể mà phần việc của bạn tạo ra hoặc giúp xác minh:
-
-[Mô tả artifact, metric, report hoặc kết quả tích hợp.]
+Output cụ thể: `logging/trace.jsonl` dòng cuối (case `EC_049`) ghi `agent_path` đủ trình tự `coordinator → delivery → order_seller → payment → policy → verifier → coordinator`, `n_llm_calls: 4`, kết quả `late_delivery_logistics`, `recommended_refund_brl: 15.31` — khớp với `output/EC_049.json` và được `tools/validate_output.py` xác nhận lại từ CSV gốc.
 
 ## 4. Giải thích phần kỹ thuật đã thực hiện
 

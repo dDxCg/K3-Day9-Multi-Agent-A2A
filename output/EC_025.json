@@ -3,7 +3,7 @@
   "assessment": {
     "primary_issue": "valid_split_payment",
     "case_status": "no_action",
-    "confidence": 0.84
+    "confidence": 0.91
   },
   "affected_entities": {
     "order_ids": [

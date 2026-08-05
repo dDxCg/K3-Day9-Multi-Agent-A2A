@@ -3,7 +3,7 @@
   "assessment": {
     "primary_issue": "canceled_order_paid",
     "case_status": "action_required",
-    "confidence": 0.91
+    "confidence": 0.84
   },
   "affected_entities": {
     "order_ids": [
