@@ -234,10 +234,14 @@ Source chính nằm trong `src/dispute_resolution/`:
 LLM không quyết định số tiền hoặc tạo evidence. Nếu API lỗi, policy engine và
 verifier vẫn sinh kết quả từ dữ liệu CSV.
 
-Evidence được giữ theo nguyên tắc tối thiểu nhưng đủ. Canceled/unavailable dùng
-order, payment và policy. Delivery/payment claims thêm item. `seller:*` chỉ
-nộp khi seller là bên chịu trách nhiệm. Confidence dùng mức `0.92` theo output
-contract mẫu, tránh false precision.
+Evidence được giữ theo nguyên tắc tối thiểu nhưng đủ: order, các item/payment row
+được dùng để dựng entity và số tiền, policy đã áp dụng; `seller:*` chỉ nộp khi
+seller là bên chịu trách nhiệm. Confidence dùng mức `0.99` vì sáu rule chạy
+deterministic trên facts đầy đủ và còn biên 0.01 cho chất lượng dữ liệu nguồn.
+
+`--validate-only` không chỉ parse JSON: pipeline tải lại CSV, chạy lại các domain
+agent và policy, rồi đối chiếu semantic toàn bộ 50 output. Khi tạo zip, pipeline
+kiểm tra lại đúng 50 JSON ở root archive và byte của từng entry khớp `output/`.
 
 ## 12. Cách chạy
 

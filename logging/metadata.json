@@ -42,10 +42,10 @@
     "VerifierAgent"
   ],
   "run": {
-    "run_id": "6eab8e1dbff747eabf1accf1a8288fb2",
-    "started_at": "2026-08-05T04:17:04.372536+00:00",
-    "completed_at": "2026-08-05T04:20:40.706277+00:00",
-    "duration_seconds": 216.334,
+    "run_id": "e02d4cb8bb7c479ab7903353d36f8176",
+    "started_at": "2026-08-05T04:48:23.355053+00:00",
+    "completed_at": "2026-08-05T04:51:42.283702+00:00",
+    "duration_seconds": 198.929,
     "case_count": 50,
     "output_count": 50,
     "issue_counts": {

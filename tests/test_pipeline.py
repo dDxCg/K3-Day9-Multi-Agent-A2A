@@ -5,6 +5,7 @@ import json
 import sys
 import tempfile
 import unittest
+import zipfile
 from collections import Counter
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from dispute_resolution.agents import (  # noqa: E402
 from dispute_resolution.config import AppConfig  # noqa: E402
 from dispute_resolution.data_store import DataStore  # noqa: E402
 from dispute_resolution.pipeline import DisputeResolutionPipeline  # noqa: E402
+from dispute_resolution.validation import OutputValidationError  # noqa: E402
 
 
 EXPECTED_COUNTS = {
@@ -81,12 +83,24 @@ class PipelineTests(unittest.TestCase):
                 max_retries=config.max_retries,
                 request_delay_seconds=config.request_delay_seconds,
             )
-            summary = DisputeResolutionPipeline(test_config, with_llm=False).run()
+            pipeline = DisputeResolutionPipeline(test_config, with_llm=False)
+            summary = pipeline.run(create_zip=True)
 
             self.assertEqual(summary["case_count"], 50)
             self.assertEqual(summary["output_count"], 50)
             self.assertEqual(summary["issue_counts"], EXPECTED_COUNTS)
             self.assertEqual(len(list(output_dir.glob("EC_*.json"))), 50)
+            validation = pipeline.validate_existing_outputs()
+            self.assertEqual(validation["validated_case_count"], 50)
+            self.assertEqual(validation["validation_error_count"], 0)
+
+            expected_zip_names = [f"EC_{index:03d}.json" for index in range(1, 51)]
+            with zipfile.ZipFile(temp_root / "output.zip") as archive:
+                self.assertEqual(archive.namelist(), expected_zip_names)
+                for name in expected_zip_names:
+                    self.assertEqual(
+                        archive.read(name), (output_dir / name).read_bytes()
+                    )
             sample = json.loads((output_dir / "EC_001.json").read_text("utf-8"))
             self.assertEqual(sample["assessment"]["primary_issue"], "late_delivery_seller")
             self.assertEqual(sample["assessment"]["confidence"], 0.99)
@@ -154,6 +168,17 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(provenance["write_mode"], "code_only_atomic")
             self.assertFalse(provenance["llm_can_modify_output"])
             self.assertEqual(len(provenance["output_digest_sha256"]), 64)
+
+            tampered = json.loads(
+                (output_dir / "EC_001.json").read_text(encoding="utf-8")
+            )
+            tampered["financial_resolution"]["recommended_refund_brl"] = 0.0
+            (output_dir / "EC_001.json").write_text(
+                json.dumps(tampered, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(OutputValidationError):
+                pipeline.validate_existing_outputs()
 
     def test_priority_canceled_over_delivery_fields(self) -> None:
         case = next(case for case in self.cases if case.case_id == "EC_008")

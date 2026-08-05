@@ -128,6 +128,10 @@ Không chứa API key, `.env`, prompt bí mật hoặc chain-of-thought.
   cùng policy áp dụng; `seller:*` chỉ xuất hiện khi seller là responsible party.
 - Candidate output được dựng trước khi gọi Gemini. ReviewResult chỉ ghi telemetry,
   không được truyền vào `build_output`; SHA-256 từng output được lưu trong trace.
+- `--validate-only` tải lại CSV và chạy lại toàn bộ agent/policy để kiểm semantic,
+  không chỉ kiểm JSON parse.
+- Sau khi tạo `output.zip`, pipeline xác nhận đúng 50 JSON ở root và từng entry
+  giống byte với file đã được Verifier duyệt trong `output/`.
 
 ## 6. Runtime và bảo mật
 

@@ -241,8 +241,31 @@ class DisputeResolutionPipeline:
         self._write_metadata(summary)
         return summary
 
-    def validate_existing_outputs(self) -> None:
+    def validate_existing_outputs(self) -> dict[str, int]:
+        """Recompute every case and semantically verify existing artifacts."""
         validate_output_directory(self.config.output_dir)
+        cases = DataStore.load_cases(self.config.input_dir)
+        store = DataStore(self.config.data_dir, cases)
+        order_agent = OrderSellerAgent(store)
+        payment_agent = PaymentAgent(store)
+        delivery_agent = DeliveryAgent()
+        policy_agent = PolicyAgent()
+        verifier_agent = VerifierAgent(store)
+
+        for case in cases:
+            output_path = self.config.output_dir / f"{case.case_id}.json"
+            output = json.loads(output_path.read_text(encoding="utf-8"))
+            order_facts = order_agent.analyze(case)
+            payment_facts = payment_agent.analyze(case, order_facts)
+            delivery_facts = delivery_agent.analyze(order_facts)
+            decision = policy_agent.analyze(
+                order_facts, payment_facts, delivery_facts
+            )
+            verifier_agent.verify(
+                case, output, order_facts, payment_facts, decision
+            )
+
+        return {"validated_case_count": len(cases), "validation_error_count": 0}
 
     def _prepare_output_dir(self) -> None:
         self.config.output_dir.mkdir(parents=True, exist_ok=True)
@@ -272,7 +295,22 @@ class DisputeResolutionPipeline:
             for path in sorted(self.config.output_dir.glob("EC_*.json")):
                 archive.write(path, arcname=path.name)
         temp_path.replace(zip_path)
+        self._validate_zip(zip_path)
         return zip_path
+
+    def _validate_zip(self, zip_path: Path) -> None:
+        expected_names = [f"EC_{index:03d}.json" for index in range(1, 51)]
+        with zipfile.ZipFile(zip_path, "r") as archive:
+            names = archive.namelist()
+            if names != expected_names:
+                raise ValueError(
+                    "ZIP content mismatch; expected exactly 50 root JSON files, "
+                    f"found {len(names)} entries"
+                )
+            for name in expected_names:
+                output_bytes = (self.config.output_dir / name).read_bytes()
+                if archive.read(name) != output_bytes:
+                    raise ValueError(f"ZIP entry differs from output file: {name}")
 
     @staticmethod
     def _sha256_file(path: Path) -> str:

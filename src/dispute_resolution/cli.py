@@ -37,8 +37,11 @@ def main(argv: list[str] | None = None) -> int:
     pipeline = DisputeResolutionPipeline(config, with_llm=args.with_llm)
 
     if args.validate_only:
-        pipeline.validate_existing_outputs()
-        print("Output validation passed: exactly 50 valid JSON files")
+        result = pipeline.validate_existing_outputs()
+        print(
+            "Output validation passed: "
+            f"{result['validated_case_count']} files match source data and EC_POLICY_V1"
+        )
         return 0
 
     summary = pipeline.run(create_zip=args.zip)

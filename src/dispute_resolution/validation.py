@@ -26,6 +26,17 @@ TOP_LEVEL_KEYS = {
     "resolution_actions",
 }
 
+ASSESSMENT_KEYS = {"primary_issue", "case_status", "confidence"}
+ENTITY_KEYS = {"order_ids", "item_ids", "seller_ids", "payment_ids"}
+ROOT_CAUSE_KEYS = {"ranked_causes", "responsible_parties"}
+FINANCIAL_KEYS = {
+    "currency",
+    "item_total_brl",
+    "freight_total_brl",
+    "payment_total_brl",
+    "recommended_refund_brl",
+}
+
 
 class OutputValidationError(ValueError):
     pass
@@ -51,7 +62,9 @@ class VerifierAgent:
         if output.get("case_id") != case.case_id:
             errors.append("case_id mismatch")
 
-        assessment = output.get("assessment", {})
+        assessment = self._nested_object(
+            output, "assessment", ASSESSMENT_KEYS, errors
+        )
         if assessment.get("primary_issue") not in ALLOWED_ISSUES:
             errors.append("invalid primary_issue")
         if assessment.get("primary_issue") != decision.primary_issue:
@@ -66,7 +79,9 @@ class VerifierAgent:
         elif confidence != decision.confidence:
             errors.append("confidence differs from policy decision")
 
-        entities = output.get("affected_entities", {})
+        entities = self._nested_object(
+            output, "affected_entities", ENTITY_KEYS, errors
+        )
         expected_entities = {
             "order_ids": [case.order_id],
             "item_ids": [
@@ -85,16 +100,24 @@ class VerifierAgent:
             elif values != expected_entities[key]:
                 errors.append(f"affected entities mismatch: {key}")
 
-        root = output.get("root_cause_analysis", {})
+        root = self._nested_object(
+            output, "root_cause_analysis", ROOT_CAUSE_KEYS, errors
+        )
         causes = root.get("ranked_causes", [])
         parties = root.get("responsible_parties", [])
-        if not 1 <= len(causes) <= 3:
+        expected_causes = [{"cause_code": decision.cause_code, "rank": 1}]
+        if not isinstance(causes, list) or not 1 <= len(causes) <= 3:
             errors.append("invalid ranked_causes count")
+        elif not isinstance(causes[0], dict):
+            errors.append("invalid ranked_causes entry")
         elif causes[0].get("cause_code") not in ALLOWED_CAUSES:
             errors.append("invalid cause_code")
-        elif causes != [{"cause_code": decision.cause_code, "rank": 1}]:
+        elif causes != expected_causes:
             errors.append("ranked_causes differ from policy decision")
-        if len(parties) > 3:
+        if not isinstance(parties, list):
+            errors.append("responsible_parties must be a list")
+            parties = []
+        elif len(parties) > 3:
             errors.append("too many responsible parties")
         expected_parties = [
             {"party_type": party_type, "party_id": party_id}
@@ -110,7 +133,9 @@ class VerifierAgent:
             errors.append("duplicate evidence")
         else:
             for evidence_id in evidence:
-                if not EVIDENCE_PATTERN.fullmatch(evidence_id):
+                if not isinstance(evidence_id, str):
+                    errors.append("evidence ID must be a string")
+                elif not EVIDENCE_PATTERN.fullmatch(evidence_id):
                     errors.append(f"invalid evidence format: {evidence_id}")
                 elif not self._evidence_exists(case, evidence_id):
                     errors.append(f"evidence does not exist: {evidence_id}")
@@ -133,7 +158,9 @@ class VerifierAgent:
             if evidence != expected_evidence:
                 errors.append("evidence differs from provenance contract")
 
-        finance = output.get("financial_resolution", {})
+        finance = self._nested_object(
+            output, "financial_resolution", FINANCIAL_KEYS, errors
+        )
         expected_amounts = {
             "item_total_brl": float(money(order_facts.item_total)),
             "freight_total_brl": float(money(order_facts.freight_total)),
@@ -153,6 +180,21 @@ class VerifierAgent:
 
         if errors:
             raise OutputValidationError(f"{case.case_id}: " + "; ".join(errors))
+
+    @staticmethod
+    def _nested_object(
+        output: dict[str, Any],
+        key: str,
+        expected_keys: set[str],
+        errors: list[str],
+    ) -> dict[str, Any]:
+        value = output.get(key)
+        if not isinstance(value, dict):
+            errors.append(f"{key} must be an object")
+            return {}
+        if set(value) != expected_keys:
+            errors.append(f"{key} schema keys mismatch")
+        return value
 
     def _evidence_exists(self, case: CaseRequest, evidence_id: str) -> bool:
         kind, remainder = evidence_id.split(":", 1)
@@ -180,13 +222,17 @@ class VerifierAgent:
 
 
 def validate_output_directory(output_dir: Path) -> None:
+    if not output_dir.is_dir():
+        raise OutputValidationError(f"Output directory not found: {output_dir}")
     expected = {f"EC_{index:03d}.json" for index in range(1, 51)}
-    actual = {path.name for path in output_dir.iterdir() if path.is_file()}
+    actual = {path.name for path in output_dir.iterdir()}
     if actual != expected:
         missing = sorted(expected - actual)
         extra = sorted(actual - expected)
         raise OutputValidationError(
             f"Output directory mismatch; missing={missing}, extra={extra}"
         )
-    for path in output_dir.glob("EC_*.json"):
-        json.loads(path.read_text(encoding="utf-8"))
+    for path in sorted(output_dir.glob("EC_*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise OutputValidationError(f"{path.name}: top-level JSON must be an object")

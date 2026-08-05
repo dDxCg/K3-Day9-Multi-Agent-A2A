@@ -93,7 +93,7 @@ Tôi chọn evidence theo nguyên tắc đủ để truy vết nhưng không đ�
 - Có `seller:*` chỉ khi seller là responsible party trong `late_delivery_seller`.
 - Luôn có `policy:<cause_code>` để chỉ rõ rule tạo quyết định.
 
-Verifier tính lại expected evidence từ facts và decision. Nếu output có evidence thiếu, sai định dạng, không tồn tại hoặc dư không liên quan, pipeline sẽ fail trước khi ghi file.
+Verifier tính lại expected evidence từ facts và decision. Nếu output có evidence thiếu, sai định dạng, không tồn tại hoặc dư không liên quan, pipeline sẽ fail trước khi ghi file. Chế độ `--validate-only` cũng tải lại CSV và chạy lại policy để phát hiện output bị sửa sau khi pipeline hoàn tất.
 
 ## 7. Vai trò của Gemini
 
