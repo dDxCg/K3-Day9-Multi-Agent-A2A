@@ -58,17 +58,32 @@ class VerifierAgent:
             errors.append("primary_issue differs from policy decision")
         if assessment.get("case_status") not in {"action_required", "no_action"}:
             errors.append("invalid case_status")
+        elif assessment.get("case_status") != decision.case_status:
+            errors.append("case_status differs from policy decision")
         confidence = assessment.get("confidence")
         if not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1:
             errors.append("confidence outside [0,1]")
+        elif confidence != decision.confidence:
+            errors.append("confidence differs from policy decision")
 
         entities = output.get("affected_entities", {})
+        expected_entities = {
+            "order_ids": [case.order_id],
+            "item_ids": [
+                f"{case.order_id}:{item.item_id}" for item in order_facts.items[:5]
+            ],
+            "seller_ids": list(order_facts.seller_ids[:5]),
+            "payment_ids": [
+                f"{case.order_id}:{payment.sequential}"
+                for payment in payment_facts.payments[:5]
+            ],
+        }
         for key in ("order_ids", "item_ids", "seller_ids", "payment_ids"):
             values = entities.get(key)
             if not isinstance(values, list) or len(values) > 5:
                 errors.append(f"invalid entity set: {key}")
-        if entities.get("order_ids") != [case.order_id]:
-            errors.append("affected order_ids mismatch")
+            elif values != expected_entities[key]:
+                errors.append(f"affected entities mismatch: {key}")
 
         root = output.get("root_cause_analysis", {})
         causes = root.get("ranked_causes", [])
@@ -77,8 +92,16 @@ class VerifierAgent:
             errors.append("invalid ranked_causes count")
         elif causes[0].get("cause_code") not in ALLOWED_CAUSES:
             errors.append("invalid cause_code")
+        elif causes != [{"cause_code": decision.cause_code, "rank": 1}]:
+            errors.append("ranked_causes differ from policy decision")
         if len(parties) > 3:
             errors.append("too many responsible parties")
+        expected_parties = [
+            {"party_type": party_type, "party_id": party_id}
+            for party_type, party_id in decision.responsible_parties[:3]
+        ]
+        if parties != expected_parties:
+            errors.append("responsible_parties differ from policy decision")
 
         evidence = output.get("evidence_ids", [])
         if not isinstance(evidence, list) or len(evidence) > 10:
@@ -91,6 +114,24 @@ class VerifierAgent:
                     errors.append(f"invalid evidence format: {evidence_id}")
                 elif not self._evidence_exists(case, evidence_id):
                     errors.append(f"evidence does not exist: {evidence_id}")
+            expected_evidence = [f"order:{case.order_id}"]
+            expected_evidence.extend(
+                f"item:{item_id}" for item_id in expected_entities["item_ids"]
+            )
+            expected_evidence.extend(
+                f"payment:{payment_id}"
+                for payment_id in expected_entities["payment_ids"]
+            )
+            if decision.primary_issue == "late_delivery_seller":
+                expected_evidence.extend(
+                    f"seller:{seller_id}"
+                    for seller_id in order_facts.late_seller_ids[:5]
+                )
+            expected_evidence = expected_evidence[:9] + [
+                f"policy:{decision.cause_code}"
+            ]
+            if evidence != expected_evidence:
+                errors.append("evidence differs from provenance contract")
 
         finance = output.get("financial_resolution", {})
         expected_amounts = {

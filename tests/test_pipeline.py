@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import tempfile
@@ -88,7 +89,7 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(len(list(output_dir.glob("EC_*.json"))), 50)
             sample = json.loads((output_dir / "EC_001.json").read_text("utf-8"))
             self.assertEqual(sample["assessment"]["primary_issue"], "late_delivery_seller")
-            self.assertEqual(sample["assessment"]["confidence"], 0.92)
+            self.assertEqual(sample["assessment"]["confidence"], 0.99)
 
             logistics = json.loads(
                 (output_dir / "EC_009.json").read_text("utf-8")
@@ -114,12 +115,45 @@ class PipelineTests(unittest.TestCase):
                 (output_dir / "EC_003.json").read_text("utf-8")
             )
             self.assertTrue(canceled["affected_entities"]["item_ids"])
-            self.assertFalse(
+            self.assertTrue(
                 any(
-                    evidence.startswith(("item:", "seller:"))
+                    evidence.startswith("item:")
                     for evidence in canceled["evidence_ids"]
                 )
             )
+            self.assertFalse(
+                any(
+                    evidence.startswith("seller:")
+                    for evidence in canceled["evidence_ids"]
+                )
+            )
+
+            trace_records = [
+                json.loads(line)
+                for line in trace_path.read_text("utf-8").splitlines()
+            ]
+            self.assertEqual(len(trace_records), 400)
+            output_events = [
+                record
+                for record in trace_records
+                if record["event"] == "output_written"
+            ]
+            self.assertEqual(len(output_events), 50)
+            for record in output_events:
+                payload = record["payload"]
+                output_path = output_dir / Path(payload["output_file"]).name
+                self.assertEqual(
+                    payload["output_sha256"],
+                    hashlib.sha256(output_path.read_bytes()).hexdigest(),
+                )
+                self.assertFalse(payload["llm_modified_output"])
+                self.assertTrue(payload["resolution_actions"])
+
+            metadata = json.loads(metadata_path.read_text("utf-8"))
+            provenance = metadata["output_provenance"]
+            self.assertEqual(provenance["write_mode"], "code_only_atomic")
+            self.assertFalse(provenance["llm_can_modify_output"])
+            self.assertEqual(len(provenance["output_digest_sha256"]), 64)
 
     def test_priority_canceled_over_delivery_fields(self) -> None:
         case = next(case for case in self.cases if case.case_id == "EC_008")

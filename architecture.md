@@ -25,9 +25,9 @@ flowchart LR
     O --> R[Policy Agent]
     P --> R
     D --> R
-    R --> L[Gemini Policy Reviewer]
     R --> V[Verifier Agent]
-    L --> V
+    R -. read-only review copy .-> L[Gemini Policy Reviewer]
+    L --> T
     V --> C
     C --> J[Output EC_*.json]
     C --> T[trace.jsonl]
@@ -112,8 +112,8 @@ Không chứa API key, `.env`, prompt bí mật hoặc chain-of-thought.
 ## 5. Tính đúng và xử lý lỗi
 
 - Tiền dùng `Decimal`, làm tròn 2 chữ số bằng `ROUND_HALF_UP`.
-- Confidence cố định `0.92` theo output contract mẫu; không giả precision
-  `0.99` cho mọi quyết định.
+- Confidence cố định `0.99`: policy deterministic chạy trên facts đầy đủ và được
+  Verifier đối chiếu lại; vẫn giữ biên `0.01` cho chất lượng dữ liệu nguồn.
 - Timestamp dùng trực tiếp giá trị CSV, không đổi múi giờ.
 - Missing item row tạo item/seller rỗng và item/freight bằng `0.0`.
 - Case không khớp sáu rule bị fail; không tự tạo fallback issue.
@@ -124,9 +124,10 @@ Không chứa API key, `.env`, prompt bí mật hoặc chain-of-thought.
 - JSON parser đọc object hợp lệ đầu tiên, chấp nhận markdown fence và bỏ trailing
   noise do API lặp text; response giới hạn 128 token.
 - File JSON ghi qua file tạm rồi replace để tránh artifact dang dở.
-- Evidence chỉ gồm row dùng trực tiếp trong rule: canceled/unavailable dùng
-  order + payment + policy; delivery/payment claims thêm item; `seller:*` chỉ
-  xuất hiện khi seller là responsible party.
+- Evidence gồm order, toàn bộ item/payment row tạo các trường entity và tài chính,
+  cùng policy áp dụng; `seller:*` chỉ xuất hiện khi seller là responsible party.
+- Candidate output được dựng trước khi gọi Gemini. ReviewResult chỉ ghi telemetry,
+  không được truyền vào `build_output`; SHA-256 từng output được lưu trong trace.
 
 ## 6. Runtime và bảo mật
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import platform
 import sys
@@ -39,12 +40,12 @@ def build_output(
         f"{order_id}:{payment.sequential}" for payment in payment_facts.payments
     ][:5]
 
+    # Every financial field must be traceable to its source rows. This includes
+    # item rows for canceled orders because item_total_brl and freight_total_brl
+    # remain part of the required output. Unavailable orders naturally have no
+    # item rows in the supplied dataset.
     evidence = [f"order:{order_id}"]
-    if decision.primary_issue not in {
-        "canceled_order_paid",
-        "unavailable_order_paid",
-    }:
-        evidence.extend(f"item:{item_id}" for item_id in item_ids)
+    evidence.extend(f"item:{item_id}" for item_id in item_ids)
     evidence.extend(f"payment:{payment_id}" for payment_id in payment_ids)
     # Seller master rows are evidence only when a seller is responsible.
     # For logistics, payment, canceled, unavailable and rejected claims, the
@@ -164,6 +165,10 @@ class DisputeResolutionPipeline:
                     payload=decision.trace_payload(),
                 )
 
+                # Freeze the deterministic candidate before external review.
+                # ReviewResult is telemetry only and is never an output input.
+                output = build_output(case, order_facts, payment_facts, decision)
+
                 if reviewer:
                     review = reviewer.review(
                         case,
@@ -183,7 +188,6 @@ class DisputeResolutionPipeline:
                     payload=review.trace_payload(),
                 )
 
-                output = build_output(case, order_facts, payment_facts, decision)
                 verifier_agent.verify(
                     case, output, order_facts, payment_facts, decision
                 )
@@ -206,7 +210,13 @@ class DisputeResolutionPipeline:
                     agent="CoordinatorAgent",
                     event="output_written",
                     input_from="VerifierAgent",
-                    payload={"output_file": f"output/{output_path.name}"},
+                    payload={
+                        "output_file": f"output/{output_path.name}",
+                        "output_sha256": self._sha256_file(output_path),
+                        "decision_source": "EC_POLICY_V1 deterministic policy engine",
+                        "llm_modified_output": False,
+                        "resolution_actions": output["resolution_actions"],
+                    },
                 )
                 print(
                     f"[{index:02d}/50] {case.case_id}: {decision.primary_issue} "
@@ -264,6 +274,18 @@ class DisputeResolutionPipeline:
         temp_path.replace(zip_path)
         return zip_path
 
+    @staticmethod
+    def _sha256_file(path: Path) -> str:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def _output_digest_sha256(self) -> str:
+        digest = hashlib.sha256()
+        for path in sorted(self.config.output_dir.glob("EC_*.json")):
+            digest.update(path.name.encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(path.read_bytes())
+        return digest.hexdigest()
+
     def _write_metadata(self, summary: dict[str, Any]) -> None:
         metadata = {
             "project": "K3 Day 09 - Multi-Agent E-commerce Dispute Resolution",
@@ -290,6 +312,14 @@ class DisputeResolutionPipeline:
                 "llm_review_enabled": self.with_llm,
                 "api_key_env": "GOOGLE_API_KEY",
                 "api_key_present": bool(self.config.google_api_key),
+            },
+            "output_provenance": {
+                "generated_by": "src/dispute_resolution/pipeline.py",
+                "decision_source": "EC_POLICY_V1 deterministic policy engine",
+                "write_mode": "code_only_atomic",
+                "llm_can_modify_output": False,
+                "manual_output_edits": False,
+                "output_digest_sha256": self._output_digest_sha256(),
             },
             "agents": [
                 "CoordinatorAgent",

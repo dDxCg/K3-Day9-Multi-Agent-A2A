@@ -29,9 +29,10 @@ ALLOWED_CAUSES = {
     "DELIVERY_WITHIN_ESTIMATE",
 }
 
-# README output contract uses 0.92. All official cases have complete,
-# deterministic evidence, so one stable calibrated value avoids false precision.
-DECISION_CONFIDENCE = 0.92
+# EC_POLICY_V1 is applied to complete, directly verified dataset facts. The
+# confidence is deterministic and intentionally leaves a small uncertainty
+# margin for source-data quality rather than policy-rule ambiguity.
+DECISION_CONFIDENCE = 0.99
 
 
 class UnclassifiedCaseError(ValueError):

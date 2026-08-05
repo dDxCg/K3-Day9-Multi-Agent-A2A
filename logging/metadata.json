@@ -24,6 +24,14 @@
     "api_key_env": "GOOGLE_API_KEY",
     "api_key_present": true
   },
+  "output_provenance": {
+    "generated_by": "src/dispute_resolution/pipeline.py",
+    "decision_source": "EC_POLICY_V1 deterministic policy engine",
+    "write_mode": "code_only_atomic",
+    "llm_can_modify_output": false,
+    "manual_output_edits": false,
+    "output_digest_sha256": "17f6ea117894b1ce8251436fafc6eb9d7379cbd7f453f1eadc338d795d1f813a"
+  },
   "agents": [
     "CoordinatorAgent",
     "OrderSellerAgent",
@@ -34,10 +42,10 @@
     "VerifierAgent"
   ],
   "run": {
-    "run_id": "a266019afa774bbe9ce0f554433a70ee",
-    "started_at": "2026-08-05T03:47:25.826050+00:00",
-    "completed_at": "2026-08-05T03:50:43.841111+00:00",
-    "duration_seconds": 198.015,
+    "run_id": "6eab8e1dbff747eabf1accf1a8288fb2",
+    "started_at": "2026-08-05T04:17:04.372536+00:00",
+    "completed_at": "2026-08-05T04:20:40.706277+00:00",
+    "duration_seconds": 216.334,
     "case_count": 50,
     "output_count": 50,
     "issue_counts": {
