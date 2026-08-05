@@ -1,0 +1,49 @@
+{
+  "model": "llama-3.1-8b-instant",
+  "parameter_size": "8B",
+  "provider": "groq",
+  "framework": "custom in-process multi-agent (A2A-style handoff)",
+  "runtime": {
+    "language": "python",
+    "python_version": "3.13.5",
+    "os": "Windows 11",
+    "elapsed_seconds": 3.86,
+    "cases_processed": 50,
+    "llm_calls": 0,
+    "llm_failures": 0,
+    "llm_enabled": false
+  },
+  "agents": [
+    {
+      "name": "coordinator",
+      "model": "llama-3.1-8b-instant",
+      "parameter_size": "8B"
+    },
+    {
+      "name": "order_seller_agent",
+      "model": "llama-3.1-8b-instant",
+      "parameter_size": "8B"
+    },
+    {
+      "name": "delivery_agent",
+      "model": "llama-3.1-8b-instant",
+      "parameter_size": "8B"
+    },
+    {
+      "name": "payment_agent",
+      "model": "llama-3.1-8b-instant",
+      "parameter_size": "8B"
+    },
+    {
+      "name": "policy_agent",
+      "model": "llama-3.1-8b-instant",
+      "parameter_size": "8B"
+    },
+    {
+      "name": "verifier_agent",
+      "model": "llama-3.1-8b-instant",
+      "parameter_size": "8B"
+    }
+  ],
+  "generated_at": "2026-08-05T03:13:55+00:00"
+}
